@@ -2,7 +2,6 @@ import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_bloc.dar
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Screens/List/expenseListScreen.dart';
 import 'package:expense_tracker_app/Screens/dashboardScreen.dart';
-import 'package:expense_tracker_app/Screens/settingsScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';

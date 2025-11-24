@@ -22,19 +22,22 @@ class ExpenseModel {
       'title': title,
       'amount': amount,
       'category': category,
-   "date": Timestamp.fromDate(date),   // Keep Timestamp in Firestore
+      "date": Timestamp.fromDate(date), // Keep Timestamp in Firestore
       'notes': notes,
     };
   }
 
-  factory ExpenseModel.fromMap(Map<String, dynamic> map, String id) {
-    return ExpenseModel(
-      id: id,
-      title: map['title'] ?? '',
-      amount: (map['amount'] ?? 0).toDouble(),
-      category: map['category'] ?? '',
-      date: (map['date'] as Timestamp).toDate(),   // ✅ FIXED
-      notes: map['notes'] ?? '',
-    );
-  }
+factory ExpenseModel.fromMap(Map<String, dynamic> map, String id) {
+  return ExpenseModel(
+    id: id,
+    title: map['title'] ?? '',
+    amount: (map['amount'] ?? 0).toDouble(),
+    category: map['category'] ?? '',
+    date: map['date'] is String
+        ? DateTime.parse(map['date'])   // Cloud Functions returns ISO string
+        : (map['date'] as Timestamp).toDate(), // direct Firestore read
+    notes: map['notes'] ?? '',
+  );
+}
+
 }

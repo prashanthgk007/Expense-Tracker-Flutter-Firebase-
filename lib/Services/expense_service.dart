@@ -1,63 +1,47 @@
-    
-     import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
 class ExpenseService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFunctions functions = FirebaseFunctions.instance;
+
+Future<List<ExpenseModel>> getExpenses() async {
+  final callable = functions.httpsCallable("getExpenses");
+
+  final result = await callable.call();
+  final data = result.data as Map<String, dynamic>;
+  final expensesList = data['expenses'] as List<dynamic>;
+
+  return expensesList
+      .map((e) => ExpenseModel.fromMap(Map<String, dynamic>.from(e), e['id']))
+      .toList();
+}
+
+
 
   Future<void> addExpense(ExpenseModel expense) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-
-    await _db.collection("users").doc(uid).collection("expenses").add({
+    final callable = functions.httpsCallable("addExpense");
+    await callable.call({
       "title": expense.title,
       "amount": expense.amount,
       "category": expense.category,
-      "date": Timestamp.fromDate(expense.date),
-      "notes": expense.notes ?? "",
-      "createdAt": Timestamp.now(),
+      "date": expense.date.toIso8601String(),
+      "notes": expense.notes,
     });
   }
 
   Future<void> updateExpense(ExpenseModel expense) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    await _db
-        .collection("users")
-        .doc(uid)
-        .collection("expenses")
-        .doc(expense.id)
-        .update({
+    final callable = functions.httpsCallable("updateExpense");
+    await callable.call({
+      "id": expense.id,
       "title": expense.title,
       "amount": expense.amount,
       "category": expense.category,
-      "date": Timestamp.fromDate(expense.date),
-      "notes": expense.notes ?? "",
+      "date": expense.date.toIso8601String(),
+      "notes": expense.notes,
     });
   }
 
   Future<void> deleteExpense(String id) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    await _db
-        .collection("users")
-        .doc(uid)
-        .collection("expenses")
-        .doc(id)
-        .delete();
+    final callable = functions.httpsCallable("deleteExpense");
+    await callable.call({"id": id});
   }
-
-Future<List<ExpenseModel>> getExpenses() async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-
-  final snapshot = await _db
-      .collection("users")
-      .doc(uid)
-      .collection("expenses")
-      .orderBy("createdAt", descending: true)
-      .get();
-
-  return snapshot.docs
-      .map((d) => ExpenseModel.fromMap(d.data(), d.id))
-      .toList();
-}
-
 }

@@ -8,3 +8,16 @@ sealed class EditExpenseState extends Equatable {
 }
 
 final class EditExpenseInitial extends EditExpenseState {}
+
+final class EditExpenseLoading extends EditExpenseState {}
+
+final class EditExpenseSuccess extends EditExpenseState {}
+
+final class EditExpenseFailure extends EditExpenseState {
+  final String message;
+  
+  const EditExpenseFailure(this.message);
+  
+  @override
+  List<Object> get props => [message];
+}

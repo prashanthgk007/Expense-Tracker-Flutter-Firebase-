@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:883982055095:android:58ff94de94b1c5e960ff32",
+        "mobilesdk_app_id": "1:883982055095:android:9efcfe296ccf0e7f60ff32",
         "android_client_info": {
-          "package_name": "com.example.expense_app"
+          "package_name": "com.example.expense_tracker_app"
         }
       },
       "oauth_client": [],
@@ -26,9 +26,9 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:883982055095:android:9efcfe296ccf0e7f60ff32",
+        "mobilesdk_app_id": "1:883982055095:android:a3424da2271e0bcb60ff32",
         "android_client_info": {
-          "package_name": "com.example.expense_tracker_app"
+          "package_name": "com.portfolio.expense_tracker_app"
         }
       },
       "oauth_client": [],

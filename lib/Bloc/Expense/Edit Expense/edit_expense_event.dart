@@ -6,3 +6,12 @@ sealed class EditExpenseEvent extends Equatable {
   @override
   List<Object> get props => [];
 }
+
+class UpdateExpenseEvent extends EditExpenseEvent {
+  final ExpenseModel expense;
+
+  const UpdateExpenseEvent(this.expense);
+
+  @override
+  List<Object> get props => [expense];
+}

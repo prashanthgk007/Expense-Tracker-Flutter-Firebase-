@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../Services/expense_service.dart';
-import '../../../Model/expenseModel.dart';
 import 'expense_event.dart';
 import 'expense_state.dart';
 

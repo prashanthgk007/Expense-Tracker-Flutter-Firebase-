@@ -70,6 +70,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '883982055095',
     projectId: 'expenseapp-e617c',
     storageBucket: 'expenseapp-e617c.firebasestorage.app',
-    iosBundleId: 'com.example.expenseTrackerApp',
+    iosBundleId: 'com.portfolio.expenseTrackerApp',
   );
 }
