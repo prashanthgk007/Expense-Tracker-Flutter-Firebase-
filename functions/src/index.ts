@@ -3,7 +3,7 @@ import { setGlobalOptions } from "firebase-functions";
 import { onRequest } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onCall } from "firebase-functions/v2/https";
 
 admin.initializeApp();
@@ -150,7 +150,6 @@ export const deleteExpense = onCall(async (request) => {
   if (!uid) throw new Error("Unauthorized");
 
   const { id } = request.data;
-
   await admin
     .firestore()
     .collection("users")
@@ -162,3 +161,45 @@ export const deleteExpense = onCall(async (request) => {
   return { success: true };
 });
 
+export const updateBudgetsOnExpenseChange = onDocumentWritten(
+  "users/{userId}/expenses/{expenseId}",
+  async (event) => {
+    const { userId } = event.params;
+
+    const db = admin.firestore();
+
+    const expensesRef = db.collection(`users/${userId}/expenses`);
+    const budgetDocRef = db.doc(`users/${userId}/budget/budget`);
+
+    // Fetch all expenses
+    const expensesSnapshot = await expensesRef.get();
+
+    // Calculate total spent from all expenses
+    let totalSpent = 0;
+    expensesSnapshot.forEach((expenseDoc) => {
+      const expense = expenseDoc.data();
+      totalSpent += expense.amount || 0;
+    });
+
+    // Check if budget document exists
+    const budgetDoc = await budgetDocRef.get();
+    
+    if (budgetDoc.exists) {
+      // Update existing budget with new totalSpent
+      await budgetDocRef.update({
+        totalSpent: totalSpent,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`Budget updated for user ${userId}: Total spent = ${totalSpent}`);
+    } else {
+      // Budget doesn't exist yet - create it with totalSpent, limit will be set by user later
+      await budgetDocRef.set({
+        limit: 0,
+        totalSpent: totalSpent,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`Budget created for user ${userId}: Total spent = ${totalSpent}`);
+    }
+  }
+);

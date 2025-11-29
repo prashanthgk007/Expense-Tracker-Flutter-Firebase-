@@ -44,12 +44,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       appBar: AppBar(title: const Text("Add Expense")),
       body: BlocConsumer<AddExpenseBloc, AddExpenseState>(
         listener: (context, state) {
-          if (state is AddExpenseLoading){
-AppUtils.showLoading("Adding");
+          if (state is AddExpenseLoading) {
+            AppUtils.showLoading("Adding");
           }
           if (state is AddExpenseSuccess) {
             AppUtils.showSuccess("Expense added");
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           } else if (state is AddExpenseFailure) {
             AppUtils.showError(state.message);
           }
@@ -63,7 +63,10 @@ AppUtils.showLoading("Adding");
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // TITLE
-                    const Text("Title", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Title",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: titleController,
@@ -76,7 +79,10 @@ AppUtils.showLoading("Adding");
                     const SizedBox(height: 20),
 
                     // AMOUNT
-                    const Text("Amount", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Amount",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: amountController,
@@ -90,7 +96,10 @@ AppUtils.showLoading("Adding");
                     const SizedBox(height: 20),
 
                     // CATEGORY DROPDOWN
-                    const Text("Category", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Category",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -103,10 +112,12 @@ AppUtils.showLoading("Adding");
                         value: selectedCategory,
                         underline: const SizedBox(),
                         items: ExpenseCategory.values
-                            .map((e) => DropdownMenuItem(
-                                  value: e,
-                                  child: Text(getCategoryDisplayName(e)),
-                                ))
+                            .map(
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(getCategoryDisplayName(e)),
+                              ),
+                            )
                             .toList(),
                         onChanged: (value) {
                           setState(() {
@@ -119,7 +130,10 @@ AppUtils.showLoading("Adding");
                     const SizedBox(height: 20),
 
                     // DATE PICKER
-                    const Text("Date", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Date",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     InkWell(
                       onTap: pickDate,
@@ -132,7 +146,9 @@ AppUtils.showLoading("Adding");
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"),
+                            Text(
+                              "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                            ),
                             const Icon(Icons.calendar_today),
                           ],
                         ),
@@ -142,7 +158,10 @@ AppUtils.showLoading("Adding");
                     const SizedBox(height: 20),
 
                     // NOTES
-                    const Text("Notes (optional)", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Notes (optional)",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: notesController,
@@ -160,7 +179,10 @@ AppUtils.showLoading("Adding");
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: state is ExpenseLoading ? null : saveExpense,
-                        child: const Text("Save Expense", style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          "Save Expense",
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
@@ -194,20 +216,21 @@ AppUtils.showLoading("Adding");
 
   void saveExpense() {
     if (titleController.text.isEmpty || amountController.text.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
       return;
     }
 
-final expense = ExpenseModel(
-  id: '',
-  title: titleController.text.trim(),
-  amount: double.tryParse(amountController.text.trim()) ?? 0.0,
-  category: getCategoryDisplayName(selectedCategory),
-  date: selectedDate,
-  notes: notesController.text.trim(),
-);
+    final expense = ExpenseModel(
+      id: '',
+      title: titleController.text.trim(),
+      amount: double.tryParse(amountController.text.trim()) ?? 0.0,
+      category: getCategoryDisplayName(selectedCategory),
+      date: selectedDate,
+      notes: notesController.text.trim(),
+    );
 
-context.read<AddExpenseBloc>().add(SaveExpenseEvent(expense));
+    context.read<AddExpenseBloc>().add(SaveExpenseEvent(expense));
   }
 }

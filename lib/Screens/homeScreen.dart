@@ -1,7 +1,11 @@
+import 'package:expense_tracker_app/Bloc/Budget/budget_bloc.dart';
+import 'package:expense_tracker_app/Bloc/Budget/budget_event.dart';
+import 'package:expense_tracker_app/Bloc/Expense/Delete%20Expense/delete_expense_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_bloc.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Screens/List/expenseListScreen.dart';
 import 'package:expense_tracker_app/Screens/dashboardScreen.dart';
+import 'package:expense_tracker_app/Services/expense_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,14 +36,36 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _getPage(String routeName) {
     switch (routeName) {
       case AppRoutes.dashboard:
-        return const DashboardScreen();
+      return MultiBlocProvider(
+  providers: [
+    BlocProvider(
+      create: (context) => BudgetBloc()..add(LoadBudget()),
+    ),
+  ],
+  child: const DashboardScreen(),
+);
+
+
       case AppRoutes.listExpense:
-        return BlocProvider(
-          create: (context) => ExpenseBloc(),
-          child: const ExpenseListScreen(),
-        );
+return MultiBlocProvider(
+  providers: [
+        BlocProvider(create: (context) => ExpenseBloc()),
+        BlocProvider(create: (context) => DeleteExpenseBloc()),
+  ],
+  child: const ExpenseListScreen(),
+);
+
+
       default:
-        return const DashboardScreen();
+return MultiBlocProvider(
+  providers: [
+    BlocProvider(
+      create: (context) => BudgetBloc()..add(LoadBudget()),
+    ),
+  ],
+  child: const DashboardScreen(),
+);
+
     }
   }
 
@@ -67,25 +93,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: _pages,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'Expenses',
-          ),
-        ],
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => BudgetBloc()..add(LoadBudget())),
+        BlocProvider(create: (context) => ExpenseBloc()),
+        BlocProvider(create: (context) => DeleteExpenseBloc()),
+      ],
+      child: Scaffold(
+        body: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: _pages,
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.list_alt),
+              label: 'Expenses',
+            ),
+          ],
+        ),
       ),
     );
   }

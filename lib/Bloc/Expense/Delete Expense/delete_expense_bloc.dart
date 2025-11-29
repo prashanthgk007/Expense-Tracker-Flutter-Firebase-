@@ -12,7 +12,6 @@ class DeleteExpenseBloc extends Bloc<DeleteExpenseEvent, DeleteExpenseState> {
       try {
         final callable = FirebaseFunctions.instance.httpsCallable('deleteExpense');
         await callable.call({"id": event.id});
-
         emit(DeleteExpenseSuccess());
       } catch (e) {
         emit(DeleteExpenseFailure(e.toString()));

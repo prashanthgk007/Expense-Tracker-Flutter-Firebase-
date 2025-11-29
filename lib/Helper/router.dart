@@ -53,16 +53,7 @@ class AppRoutes {
 
       case listExpense:
         return MaterialPageRoute(
-          builder: (_) => MultiBlocProvider(
-            providers: [
-              BlocProvider(
-                create: (context) => ExpenseBloc(),
-              ),
-
-              BlocProvider(create: (context) => DeleteExpenseBloc()),
-            ],
-            child: const ExpenseListScreen(),
-          ),
+          builder: (_) => const ExpenseListScreen(),
         );
 
       case addExpense:

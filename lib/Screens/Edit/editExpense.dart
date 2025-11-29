@@ -85,7 +85,8 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
           }
           if (state is EditExpenseSuccess) {
             AppUtils.showSuccess("Expense updated");
-            Navigator.pop(context);
+            Navigator.pop(context, true);
+
           } else if (state is EditExpenseFailure) {
             AppUtils.showError(state.message);
           }
