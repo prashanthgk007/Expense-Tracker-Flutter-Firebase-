@@ -14,3 +14,9 @@ class BudgetErrorEvent extends BudgetEvent {
   final String message;
   BudgetErrorEvent(this.message);
 }
+
+class RecalculateBudget extends BudgetEvent {}
+class SetBudgetLimit extends BudgetEvent {
+  final double limit;
+  SetBudgetLimit(this.limit);
+}

@@ -8,7 +8,6 @@ import 'package:expense_tracker_app/Helper/enum.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:expense_tracker_app/Screens/Charts/dashboardCharts.dart';
-import 'package:expense_tracker_app/Services/expense_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -27,7 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // context.read<BudgetBloc>().add(LoadBudget());
+    context.read<BudgetBloc>().add(LoadBudget());
   }
 
   @override
@@ -148,7 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 }
 
                 return GestureDetector(
-                  onTap: () => _showSetBudgetDialog(context),
+                  onTap: () => _showEditBudgetDialog(context),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -165,7 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.add),
-                          onPressed: () => _showSetBudgetDialog(context),
+                          onPressed: () => _showEditBudgetDialog(context),
                           tooltip: "Set Budget",
                         ),
                       ],
@@ -216,15 +215,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _categoryBreakdown() {
     return Column(
       children: [
-        _categoryTile("Food", "₹2500", 0.40),
-        _categoryTile("Travel", "₹1200", 0.20),
-        _categoryTile("Shopping", "₹1800", 0.25),
-        _categoryTile("Bills", "₹1000", 0.15),
+        _categoryTitle("Food", "₹2500", 0.40),
+        _categoryTitle("Travel", "₹1200", 0.20),
+        _categoryTitle("Shopping", "₹1800", 0.25),
+        _categoryTitle("Bills", "₹1000", 0.15),
       ],
     );
   }
 
-  Widget _categoryTile(String title, String amount, double percent) {
+  Widget _categoryTitle(String title, String amount, double percent) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -320,8 +319,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: () async {
                       try {
                         AppUtils.showLoading("Recalculating...");
-                        final expenseService = ExpenseService();
-                        await expenseService.recalculateTotalSpent();
+                        context.read<BudgetBloc>().add(RecalculateBudget());
 
                         // Wait for update
                         await Future.delayed(const Duration(milliseconds: 300));
@@ -343,7 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   IconButton(
                     icon: const Icon(Icons.edit, size: 20),
                     onPressed: () =>
-                        _showSetBudgetDialog(context, currentLimit: limit),
+                        _showEditBudgetDialog(context, currentLimit: limit),
                     tooltip: "Edit Budget",
                   ),
                 ],
@@ -368,7 +366,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showSetBudgetDialog(BuildContext context, {double? currentLimit}) {
+  void _showEditBudgetDialog(BuildContext context, {double? currentLimit}) {
     final TextEditingController budgetController = TextEditingController(
       text: currentLimit != null && currentLimit > 0
           ? currentLimit.toStringAsFixed(0)
@@ -417,10 +415,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               try {
                 AppUtils.showLoading("Setting budget...");
-                final expenseService = ExpenseService();
 
                 // Calculate and set budget
-                await expenseService.setBudgetLimit(amount);
+                context.read<BudgetBloc>().add(SetBudgetLimit(amount));
 
                 // Wait a moment for Firestore to update
                 await Future.delayed(const Duration(milliseconds: 500));

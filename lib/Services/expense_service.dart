@@ -5,7 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class ExpenseService {
   final FirebaseFunctions functions = FirebaseFunctions.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // <-- Missing
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // <-- Missing
 
   Future<List<ExpenseModel>> getExpenses() async {
     final callable = functions.httpsCallable("getExpenses");
@@ -63,12 +64,13 @@ class ExpenseService {
         .doc("budget") // one document only
         .snapshots()
         .map((snapshot) {
-      // Ensure we always return data (null if document doesn't exist)
-      return snapshot.data();
-    }).handleError((error) {
-      // Handle any stream errors
-      throw Exception("Failed to load budget: $error");
-    });
+          // Ensure we always return data (null if document doesn't exist)
+          return snapshot.data();
+        })
+        .handleError((error) {
+          // Handle any stream errors
+          throw Exception("Failed to load budget: $error");
+        });
   }
 
   Future<void> updateBudget({
@@ -86,14 +88,11 @@ class ExpenseService {
         .doc(userId)
         .collection("budget")
         .doc("budget")
-        .set(
-      {
-        "limit": limit,
-        "totalSpent": totalSpent,
-        "updatedAt": FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+        .set({
+          "limit": limit,
+          "totalSpent": totalSpent,
+          "updatedAt": FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   /// Calculate total spent from all expenses
@@ -101,14 +100,16 @@ class ExpenseService {
     try {
       final expenses = await getExpenses();
       double total = 0.0;
-      
+
       print("DEBUG: Calculating totalSpent from ${expenses.length} expenses");
-      
+
       for (var expense in expenses) {
-        print("DEBUG: Expense amount: ${expense.amount}, type: ${expense.amount.runtimeType}");
+        print(
+          "DEBUG: Expense amount: ${expense.amount}, type: ${expense.amount.runtimeType}",
+        );
         total += expense.amount;
       }
-      
+
       print("DEBUG: Total calculated: $total");
       return total;
     } catch (e) {
@@ -120,7 +121,7 @@ class ExpenseService {
   /// Set budget limit and calculate totalSpent from existing expenses
   Future<void> setBudgetLimit(double limit) async {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user == null) {
       throw Exception("User not logged in");
     }
@@ -131,7 +132,9 @@ class ExpenseService {
     double totalSpent = 0.0;
     try {
       totalSpent = await calculateTotalSpent();
-      print("DEBUG: Setting budget with limit: $limit, totalSpent: $totalSpent");
+      print(
+        "DEBUG: Setting budget with limit: $limit, totalSpent: $totalSpent",
+      );
     } catch (e) {
       print("Warning: Could not fetch expenses to calculate totalSpent: $e");
       // If we can't fetch expenses, try to get existing totalSpent from budget
@@ -163,22 +166,21 @@ class ExpenseService {
         .doc("budget");
 
     // Use set with merge to create or update
-    await budgetRef.set(
-      {
-        "limit": limit,
-        "totalSpent": totalSpent,
-        "updatedAt": FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
+    await budgetRef.set({
+      "limit": limit,
+      "totalSpent": totalSpent,
+      "updatedAt": FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    print(
+      "DEBUG: Budget updated successfully with limit: $limit, totalSpent: $totalSpent",
     );
-    
-    print("DEBUG: Budget updated successfully with limit: $limit, totalSpent: $totalSpent");
   }
 
   /// Recalculate and update totalSpent from expenses
   Future<void> recalculateTotalSpent() async {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user == null) {
       throw Exception("User not logged in");
     }
@@ -194,17 +196,14 @@ class ExpenseService {
 
     // Get existing limit to preserve it
     final budgetDoc = await budgetRef.get();
-    final existingLimit = budgetDoc.exists 
+    final existingLimit = budgetDoc.exists
         ? (budgetDoc.data()?["limit"] ?? 0.0).toDouble()
         : 0.0;
 
-    await budgetRef.set(
-      {
-        "limit": existingLimit,
-        "totalSpent": totalSpent,
-        "updatedAt": FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await budgetRef.set({
+      "limit": existingLimit,
+      "totalSpent": totalSpent,
+      "updatedAt": FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }

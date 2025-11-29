@@ -3,25 +3,35 @@ import 'package:expense_tracker_app/Bloc/Budget/budget_event.dart';
 import 'package:expense_tracker_app/Bloc/Budget/budget_state.dart';
 import 'package:expense_tracker_app/Services/expense_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
+import 'package:expense_tracker_app/Bloc/Budget/budget_event.dart';
+import 'package:expense_tracker_app/Bloc/Budget/budget_state.dart';
+import 'package:expense_tracker_app/Services/expense_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
   final ExpenseService _service = ExpenseService();
   StreamSubscription? _subscription;
 
   BudgetBloc() : super(BudgetLoading()) {
-    // Register event handlers once in constructor
+    // Existing event handlers
     on<LoadBudget>(_onLoadBudget);
     on<RefreshBudget>(_onRefreshBudget);
     on<BudgetUpdatedEvent>(_onBudgetUpdated);
     on<BudgetErrorEvent>(_onBudgetError);
+
+    // *** NEW EVENTS ADDED HERE ***
+    on<SetBudgetLimit>(_onSetBudgetLimit);
+    on<RecalculateBudget>(_onRecalculateBudget);
   }
+
+  // ---- EVENT HANDLERS ----
 
   void _onLoadBudget(LoadBudget event, Emitter<BudgetState> emit) {
     _startRealTimeStream();
   }
 
   void _onRefreshBudget(RefreshBudget event, Emitter<BudgetState> emit) {
-    // Cancel existing subscription and restart
     _subscription?.cancel();
     _startRealTimeStream();
   }
@@ -34,39 +44,55 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     emit(BudgetError(event.message));
   }
 
+  /// 👉 NEW HANDLER: Set Budget Limit
+  Future<void> _onSetBudgetLimit(
+      SetBudgetLimit event, Emitter<BudgetState> emit) async {
+    emit(BudgetLoading());
+    try {
+      await _service.setBudgetLimit(event.limit);
+      add(LoadBudget()); // refresh UI
+    } catch (e) {
+      emit(BudgetError(e.toString()));
+    }
+  }
+
+  /// 👉 NEW HANDLER: Recalculate Budget
+  Future<void> _onRecalculateBudget(
+      RecalculateBudget event, Emitter<BudgetState> emit) async {
+    emit(BudgetLoading());
+    try {
+      await _service.recalculateTotalSpent();
+      add(LoadBudget()); // refresh UI
+    } catch (e) {
+      emit(BudgetError(e.toString()));
+    }
+  }
+
+  // ---- REALTIME LISTENER ----
+
   void _startRealTimeStream() {
-    // Cancel any existing subscription first
     _subscription?.cancel();
 
     try {
-      // Start real-time stream - Firestore snapshots() provides automatic updates
-      // This stream listens continuously and emits on every document change
-      // It will emit immediately with current data, then on every change
       _subscription = _service.getBudget().listen(
         (data) {
-          // Emit new state whenever budget data changes
-          // This triggers automatically when:
-          // - Expense is added (Cloud Function updates budget)
-          // - Expense is updated (Cloud Function updates budget) 
-          // - Expense is deleted (Cloud Function updates budget)
-          // - Budget limit is changed manually
           add(BudgetUpdatedEvent(data));
         },
         onError: (e) {
-          final errorMessage = e.toString().toLowerCase();
-          if (errorMessage.contains('permission-denied') || 
-              errorMessage.contains('missing or insufficient')) {
+          final msg = e.toString().toLowerCase();
+          if (msg.contains('permission-denied') ||
+              msg.contains('missing or insufficient')) {
             add(BudgetUpdatedEvent(null));
           } else {
             add(BudgetErrorEvent(e.toString()));
           }
         },
-        cancelOnError: false, // Keep listening even after errors
+        cancelOnError: false,
       );
     } catch (e) {
-      final errorMessage = e.toString().toLowerCase();
-      if (errorMessage.contains('permission-denied') || 
-          errorMessage.contains('missing or insufficient')) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('permission-denied') ||
+          msg.contains('missing or insufficient')) {
         add(BudgetUpdatedEvent(null));
       } else {
         add(BudgetErrorEvent(e.toString()));
@@ -80,5 +106,3 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     return super.close();
   }
 }
-
-
