@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:expense_tracker_app/Bloc/Budget/budget_event.dart';
-import 'package:expense_tracker_app/Bloc/Budget/budget_state.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
 import 'package:expense_tracker_app/Services/expense_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
-import 'package:expense_tracker_app/Bloc/Budget/budget_event.dart';
-import 'package:expense_tracker_app/Bloc/Budget/budget_state.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
 import 'package:expense_tracker_app/Services/expense_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

@@ -1,9 +1,12 @@
 // -------------------------------------------
 // HOME DASHBOARD
 // -------------------------------------------
-import 'package:expense_tracker_app/Bloc/Budget/budget_bloc.dart';
-import 'package:expense_tracker_app/Bloc/Budget/budget_event.dart';
-import 'package:expense_tracker_app/Bloc/Budget/budget_state.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_bloc.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_event.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_state.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_bloc.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
 import 'package:expense_tracker_app/Helper/enum.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
@@ -26,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<BudgetBloc>().add(LoadBudget());
+    context.read<BudgetBloc>().add(RecalculateBudget());
   }
 
   @override
@@ -44,7 +47,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       // FLOATING BUTTON (optional)
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.addExpense),
+        onPressed: () =>
+            Navigator.pushNamed(context, AppRoutes.addExpense).then((value) {
+              if (value == true) {
+                context.read<BudgetBloc>().add(RecalculateBudget());
+                context.read<ExpenseSummaryBloc>().add(LoadExpenseSummary());
+              }
+            }),
         child: const Icon(Icons.add),
       ),
 
@@ -53,21 +62,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // -------------------------------------------
-            // 4. CHART SECTION - DAILY / WEEKLY / MONTHLY
-            // -------------------------------------------
-            const Text(
-              "Overview",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-
-            SizedBox(height: 10),
-
-            // -------------------------------------------------------
-            // 🔥 PASS VALUE TO CHART WIDGET
-            // -------------------------------------------------------
-            DashboardCharts(),
-            const SizedBox(height: 25),
             // -------------------------------------------
             // 1. SUMMARY CARDS
             // -------------------------------------------
@@ -78,12 +72,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: 12),
 
-            Row(
-              children: [
-                _summaryCard("Total Spent", "₹12,500", Icons.wallet),
-                const SizedBox(width: 12),
-                _summaryCard("This Month", "₹4,200", Icons.calendar_today),
-              ],
+            BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
+              builder: (context, state) {
+                if (state is ExpenseSummaryLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is ExpenseSummaryLoaded) {
+                  return Row(
+                    children: [
+                      _summaryCard(
+                        "Total Spent",
+                        "₹${state.summary.totalSpent}",
+                        Icons.wallet,
+                      ),
+                      const SizedBox(width: 12),
+                      _summaryCard(
+                        "This Month",
+                        "₹${state.summary.thisMonthSpent}",
+                        Icons.calendar_today,
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    _summaryCard("Total Spent", "--", Icons.wallet),
+                    const SizedBox(width: 12),
+                    _summaryCard("This Month", "--", Icons.calendar_today),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 25),
@@ -97,7 +117,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 10),
 
-            _categoryBreakdown(),
+            BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
+              builder: (context, state) {
+                if (state is ExpenseSummaryLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is ExpenseSummaryLoaded) {
+                  final categories = state.summary.categories;
+
+                  if (categories.isEmpty) {
+                    return const Text("No spending data yet.");
+                  }
+
+                  final total = state.summary.totalSpent;
+
+                  return Column(
+                    children: categories.entries.map((entry) {
+                      final percent = total > 0
+                          ? (entry.value / total).toDouble()
+                          : 0.0;
+
+                      return _categoryTitle(
+                        entry.key,
+                        "₹${entry.value}",
+                        percent, // now double ✔️
+                      );
+                    }).toList(),
+                  );
+                }
+
+                return const Text("No data available");
+              },
+            ),
 
             // const SizedBox(height: 25),
 
@@ -175,6 +227,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
 
             const SizedBox(height: 30),
+            DashboardCharts(),
+            const SizedBox(height: 25),
           ],
         ),
       ),

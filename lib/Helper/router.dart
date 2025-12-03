@@ -1,9 +1,5 @@
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_bloc.dart';
-import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_state.dart';
-import 'package:expense_tracker_app/Bloc/Expense/Delete%20Expense/delete_expense_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Expense/Edit%20Expense/edit_expense_bloc.dart';
-import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_bloc.dart';
-import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_event.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
 import 'package:expense_tracker_app/Screens/Add/addExpense.dart';
 import 'package:expense_tracker_app/Screens/Details/detailScreen.dart';
@@ -82,7 +78,6 @@ class AppRoutes {
         }
 
       case expenseDetails:
-        final expense = settings.arguments;
         return MaterialPageRoute(builder: (_) => ExpenseDetailsScreen());
 
       case setting:

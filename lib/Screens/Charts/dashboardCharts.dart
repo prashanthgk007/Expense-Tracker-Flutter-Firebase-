@@ -12,7 +12,7 @@ class DashboardCharts extends StatefulWidget {
 
 class _DashboardChartsState extends State<DashboardCharts> {
   ChartType selectedChart = ChartType.pie;
-ExpenseBasis selectedRange = ExpenseBasis.daily;
+  ExpenseBasis selectedRange = ExpenseBasis.daily;
 
   // ------------------------
   // SAMPLE DATA
@@ -38,16 +38,16 @@ ExpenseBasis selectedRange = ExpenseBasis.daily;
   // ------------------------
   // GET DATA BASED ON RANGE
   // ------------------------
-List<ExpenseCategoryData> getChartData() {
-  switch (selectedRange) {
-    case ExpenseBasis.daily:
-      return dailyData;
-    case ExpenseBasis.weekly:
-      return weeklyData;
-    case ExpenseBasis.monthly:
-      return monthlyData;
+  List<ExpenseCategoryData> getChartData() {
+    switch (selectedRange) {
+      case ExpenseBasis.daily:
+        return dailyData;
+      case ExpenseBasis.weekly:
+        return weeklyData;
+      case ExpenseBasis.monthly:
+        return monthlyData;
+    }
   }
-}
 
   // You can also create barData(), areaData() similarly
 
@@ -60,69 +60,61 @@ List<ExpenseCategoryData> getChartData() {
         // ------------------------------
         // CHART TYPE DROPDOWN
         // ------------------------------
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Expanded(
-      child: _buildDropdownContainer(
-        child: DropdownButton<ChartType>(
-          value: selectedChart,
-          isExpanded: true,
-          underline: const SizedBox(),
-          items: const [
-            DropdownMenuItem(
-              value: ChartType.pie,
-              child: Text("Pie"),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: _buildDropdownContainer(
+                child: DropdownButton<ChartType>(
+                  value: selectedChart,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  items: const [
+                    DropdownMenuItem(value: ChartType.pie, child: Text("Pie")),
+                    DropdownMenuItem(value: ChartType.bar, child: Text("Bar")),
+                    DropdownMenuItem(
+                      value: ChartType.area,
+                      child: Text("Area"),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() => selectedChart = value!);
+                  },
+                ),
+              ),
             ),
-            DropdownMenuItem(
-              value: ChartType.bar,
-              child: Text("Bar"),
-            ),
-            DropdownMenuItem(
-              value: ChartType.area,
-              child: Text("Area"),
+
+            const SizedBox(width: 10),
+
+            Expanded(
+              child: _buildDropdownContainer(
+                child: DropdownButton<ExpenseBasis>(
+                  value: selectedRange,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  items: ExpenseBasis.values.map((basis) {
+                    return DropdownMenuItem(
+                      value: basis,
+                      child: Text(
+                        basis.name[0].toUpperCase() + basis.name.substring(1),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => selectedRange = value!);
+                  },
+                ),
+              ),
             ),
           ],
-          onChanged: (value) {
-            setState(() => selectedChart = value!);
-          },
         ),
-      ),
-    ),
-
-    const SizedBox(width: 10),
-
-    Expanded(
-      child: _buildDropdownContainer(
-        child: DropdownButton<ExpenseBasis>(
-          value: selectedRange,
-          isExpanded: true,
-          underline: const SizedBox(),
-  items: ExpenseBasis.values.map((basis) {
-    return DropdownMenuItem(
-      value: basis,
-      child: Text(
-        basis.name[0].toUpperCase() + basis.name.substring(1),
-      ),
-    );
-  }).toList(),
-          onChanged: (value) {
-            setState(() => selectedRange = value!);
-          },
-        ),
-      ),
-    ),
-  ],
-),
-
 
         const SizedBox(height: 10),
 
         // ------------------------------
         // SHOW SELECTED CHART
         // ------------------------------
-        if (selectedChart == ChartType.pie)
-          _buildPieChart(getChartData()),
+        if (selectedChart == ChartType.pie) _buildPieChart(getChartData()),
 
         if (selectedChart == ChartType.bar)
           _buildBarChart(getChartData()), // TODO: Connect range-based data
@@ -175,20 +167,19 @@ Row(
   // BAR CHART (You can map range data)
   // ------------------------------
   Widget _buildBarChart(List<ExpenseCategoryData> data) {
-
     return Card(
       elevation: 4,
       child: SizedBox(
         height: 300,
         child: SfCartesianChart(
           primaryXAxis: CategoryAxis(),
-          title: ChartTitle(text: "Expense Breakdown ($selectedRange)"),
+          // title: ChartTitle(text: "$selectedRange"),
           series: <CartesianSeries>[
             ColumnSeries<ExpenseCategoryData, String>(
               dataSource: data,
               xValueMapper: (d, _) => d.category,
               yValueMapper: (d, _) => d.amount,
-                            dataLabelSettings: const DataLabelSettings(isVisible: true),
+              dataLabelSettings: const DataLabelSettings(isVisible: true),
             ),
           ],
         ),
@@ -199,32 +190,30 @@ Row(
   // ------------------------------
   // AREA CHART (You can map range data)
   // ------------------------------
-Widget _buildAreaChart(List<ExpenseCategoryData> data) {
-
-  return Card(
-    elevation: 4,
-    child: SizedBox(
-      height: 300,
-      child: SfCartesianChart(
-        primaryXAxis: CategoryAxis(),
+  Widget _buildAreaChart(List<ExpenseCategoryData> data) {
+    return Card(
+      elevation: 4,
+      child: SizedBox(
+        height: 300,
+        child: SfCartesianChart(
+          primaryXAxis: CategoryAxis(),
           title: ChartTitle(text: "Expense Breakdown ($selectedRange)"),
-        series: <CartesianSeries>[
-          AreaSeries<ExpenseCategoryData, String>(
-            dataSource: data,
-            xValueMapper: (d, _) => d.category,
-            yValueMapper: (d, _) => d.amount,
+          series: <CartesianSeries>[
+            AreaSeries<ExpenseCategoryData, String>(
+              dataSource: data,
+              xValueMapper: (d, _) => d.category,
+              yValueMapper: (d, _) => d.amount,
               dataLabelSettings: const DataLabelSettings(isVisible: true),
-            // AREA FILL COLOR WITH OPACITY
-            color: Colors.blue.withOpacity(0.4),
+              // AREA FILL COLOR WITH OPACITY
+              color: Colors.blue.withOpacity(0.4),
 
-            // BORDER LINE
-            borderColor: Colors.blue,
-            borderWidth: 3,
-          ),
-        ],
+              // BORDER LINE
+              borderColor: Colors.blue,
+              borderWidth: 3,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

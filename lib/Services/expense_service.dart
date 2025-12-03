@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
+import 'package:expense_tracker_app/Model/expenseSummaryModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ExpenseService {
   final FirebaseFunctions functions = FirebaseFunctions.instance;
   final FirebaseFirestore _firestore =
-      FirebaseFirestore.instance; // <-- Missing
+      FirebaseFirestore.instance;
 
   Future<List<ExpenseModel>> getExpenses() async {
     final callable = functions.httpsCallable("getExpenses");
@@ -205,5 +206,19 @@ class ExpenseService {
       "totalSpent": totalSpent,
       "updatedAt": FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<ExpenseSummary> getExpenseSummary() async {
+    final callable = functions.httpsCallable("getExpenseSummary");
+
+    final result = await callable.call();
+
+    if (result.data == null || result.data is! Map) {
+      throw Exception("Invalid summary response from server");
+    }
+
+    final data = Map<String, dynamic>.from(result.data);
+
+    return ExpenseSummary.fromMap(data);
   }
 }

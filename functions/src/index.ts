@@ -12,6 +12,14 @@ admin.initializeApp();
 // https://firebase.google.com/docs/functions/typescript
 setGlobalOptions({ maxInstances: 10 });
 
+type Expense = {
+  title: string;
+  amount: number;
+  category: string;
+  date: admin.firestore.Timestamp;
+  notes?: string;
+};
+
 export const checkHealth = onRequest((req, res) => {
   logger.info("Health Check Called");
   res.send("Function is online");
@@ -203,3 +211,75 @@ export const updateBudgetsOnExpenseChange = onDocumentWritten(
     }
   }
 );
+
+export const getExpenseSummary = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new Error("Unauthorized");
+
+  const db = admin.firestore();
+  const now = new Date();
+
+  // Helpers
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday as start of week (adjust if needed)
+
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  let totalSpent = 0;
+  let thisMonthSpent = 0;
+  let thisWeekSpent = 0;
+  let todaySpent = 0;
+
+  const categoryTotals: Record<string, number> = {};
+
+  try {
+    const snapshot = await db
+      .collection("users")
+      .doc(uid)
+      .collection("expenses")
+      .get();
+
+    snapshot.forEach((doc) => {
+      const data = doc.data() as Expense;
+      const amount = Number(data.amount || 0);
+      const date = data.date?.toDate?.() ?? null;
+
+      totalSpent += amount;
+
+      if (date) {
+        // Month
+        if (date >= startOfMonth) {
+          thisMonthSpent += amount;
+        }
+
+        // Week
+        if (date >= startOfWeek) {
+          thisWeekSpent += amount;
+        }
+
+        // Day
+        if (date >= startOfDay) {
+          todaySpent += amount;
+        }
+      }
+
+      const category = data.category || "Other";
+      categoryTotals[category] = (categoryTotals[category] || 0) + amount;
+    });
+
+    return {
+      success: true,
+      totalSpent,
+      todaySpent,       
+      thisWeekSpent,   
+      thisMonthSpent,
+      categories: categoryTotals,
+    };
+
+  } catch (err) {
+    console.error("Error summary:", err);
+    throw new Error("Failed to fetch summary");
+  }
+});
