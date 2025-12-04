@@ -67,6 +67,8 @@ export const notifyOnExpenseAdded = onDocumentCreated(
     });
   });
 
+  //Expense Functions
+
 export const getExpenses = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) {
@@ -169,6 +171,122 @@ export const deleteExpense = onCall(async (request) => {
   return { success: true };
 });
 
+//Budget Functions
+
+export const getBudget = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new Error("Unauthorized");
+
+  const ref = admin
+    .firestore()
+    .collection("users")
+    .doc(uid)
+    .collection("budget")
+    .doc("budget");
+
+  const doc = await ref.get();
+
+  return doc.exists
+    ? doc.data()
+    : { limit: 0, totalSpent: 0, updatedAt: null }; // default
+});
+
+
+export const updateBudget = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new Error("Unauthorized");
+
+  const { limit } = request.data;
+
+  if (typeof limit !== "number") {
+    throw new Error("Invalid limit value");
+  }
+
+  const db = admin.firestore();
+  const budgetRef = db
+    .collection("users")
+    .doc(uid)
+    .collection("budget")
+    .doc("budget");
+
+  // Preserve existing totalSpent value
+  const budgetDoc = await budgetRef.get();
+  const existingTotal = budgetDoc.exists
+    ? Number(budgetDoc.data()?.totalSpent ?? 0)
+    : 0;
+
+  await budgetRef.set(
+    {
+      limit,
+      totalSpent: existingTotal, // protected
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return {
+    success: true,
+    limit,
+    totalSpent: existingTotal,
+  };
+});
+
+
+export const recalculateBudget = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new Error("Unauthorized");
+
+  const db = admin.firestore();
+
+  try {
+    // 1⃣ Get all expenses
+    const expensesSnapshot = await db
+      .collection("users")
+      .doc(uid)
+      .collection("expenses")
+      .get();
+
+    let totalSpent = 0;
+
+    expensesSnapshot.forEach((doc) => {
+      const data = doc.data();
+      totalSpent += Number(data.amount || 0);
+    });
+
+    // 2⃣ Get existing budget to preserve limit
+    const budgetRef = db
+      .collection("users")
+      .doc(uid)
+      .collection("budget")
+      .doc("budget");
+
+    const budgetDoc = await budgetRef.get();
+    const existingLimit = budgetDoc.exists
+      ? Number(budgetDoc.data()?.limit ?? 0)
+      : 0;
+
+    // 3⃣ Update total spent safely
+    await budgetRef.set(
+      {
+        limit: existingLimit,
+        totalSpent,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    return {
+      success: true,
+      totalSpent,
+      limit: existingLimit,
+    };
+  } catch (error) {
+    console.error("Error recalculating budget:", error);
+    throw new Error("Failed to recalculate budget");
+  }
+});
+
+
 export const updateBudgetsOnExpenseChange = onDocumentWritten(
   "users/{userId}/expenses/{expenseId}",
   async (event) => {
@@ -191,7 +309,7 @@ export const updateBudgetsOnExpenseChange = onDocumentWritten(
 
     // Check if budget document exists
     const budgetDoc = await budgetDocRef.get();
-    
+
     if (budgetDoc.exists) {
       // Update existing budget with new totalSpent
       await budgetDocRef.update({
@@ -212,6 +330,52 @@ export const updateBudgetsOnExpenseChange = onDocumentWritten(
   }
 );
 
+
+export const setBudgetLimit = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new Error("Unauthorized request");
+
+  const { limit } = request.data;
+  if (!limit || typeof limit !== "number") {
+    throw new Error("Invalid limit value");
+  }
+
+  const db = admin.firestore();
+
+  // Calculate totalSpent from expenses in the backend
+  const expensesSnapshot = await db
+    .collection("users")
+    .doc(uid)
+    .collection("expenses")
+    .get();
+
+  let totalSpent = 0;
+  expensesSnapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.amount) totalSpent += Number(data.amount);
+  });
+
+  const budgetRef = db
+    .collection("users")
+    .doc(uid)
+    .collection("budget")
+    .doc("budget");
+
+  await budgetRef.set(
+    {
+      limit,
+      totalSpent,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { success: true, limit, totalSpent };
+});
+
+
+//Expense Summary Functions
+
 export const getExpenseSummary = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new Error("Unauthorized");
@@ -219,19 +383,10 @@ export const getExpenseSummary = onCall(async (request) => {
   const db = admin.firestore();
   const now = new Date();
 
-  // Helpers
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday as start of week (adjust if needed)
-
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   let totalSpent = 0;
   let thisMonthSpent = 0;
-  let thisWeekSpent = 0;
-  let todaySpent = 0;
-
   const categoryTotals: Record<string, number> = {};
 
   try {
@@ -242,38 +397,24 @@ export const getExpenseSummary = onCall(async (request) => {
       .get();
 
     snapshot.forEach((doc) => {
-      const data = doc.data() as Expense;
+      const data = doc.data() as Expense;  // ← FIX: Explicit Cast
+
       const amount = Number(data.amount || 0);
-      const date = data.date?.toDate?.() ?? null;
+      const date = data.date?.toDate?.() ?? null; // Safe optional chaining
 
       totalSpent += amount;
 
-      if (date) {
-        // Month
-        if (date >= startOfMonth) {
-          thisMonthSpent += amount;
-        }
-
-        // Week
-        if (date >= startOfWeek) {
-          thisWeekSpent += amount;
-        }
-
-        // Day
-        if (date >= startOfDay) {
-          todaySpent += amount;
-        }
+      if (date && date >= startOfMonth) {
+        thisMonthSpent += amount;
       }
 
-      const category = data.category || "Other";
+      const category = data.category || "Other"; // Now safely typed
       categoryTotals[category] = (categoryTotals[category] || 0) + amount;
     });
 
     return {
       success: true,
       totalSpent,
-      todaySpent,       
-      thisWeekSpent,   
       thisMonthSpent,
       categories: categoryTotals,
     };

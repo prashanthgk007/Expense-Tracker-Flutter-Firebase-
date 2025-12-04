@@ -173,7 +173,7 @@ class _DashboardChartsState extends State<DashboardCharts> {
         height: 300,
         child: SfCartesianChart(
           primaryXAxis: CategoryAxis(),
-          // title: ChartTitle(text: "$selectedRange"),
+          title: ChartTitle(text: "$selectedRange"),
           series: <CartesianSeries>[
             ColumnSeries<ExpenseCategoryData, String>(
               dataSource: data,

@@ -29,7 +29,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<BudgetBloc>().add(RecalculateBudget());
   }
 
   @override
@@ -49,10 +48,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () =>
             Navigator.pushNamed(context, AppRoutes.addExpense).then((value) {
-              if (value == true) {
-                context.read<BudgetBloc>().add(RecalculateBudget());
-                context.read<ExpenseSummaryBloc>().add(LoadExpenseSummary());
-              }
             }),
         child: const Icon(Icons.add),
       ),
@@ -227,8 +222,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
 
             const SizedBox(height: 30),
-            DashboardCharts(),
-            const SizedBox(height: 25),
+            // DashboardCharts(),
+            // const SizedBox(height: 25),
           ],
         ),
       ),
@@ -368,30 +363,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 20),
-                    onPressed: () async {
-                      try {
-                        AppUtils.showLoading("Recalculating...");
-                        context.read<BudgetBloc>().add(RecalculateBudget());
+                  // IconButton(
+                  //   icon: const Icon(Icons.refresh, size: 20),
+                  //   onPressed: () async {
+                  //     try {
+                  //       AppUtils.showLoading("Recalculating...");
+                  //       context.read<BudgetBloc>().add(RecalculateBudget());
 
-                        // Wait for update
-                        await Future.delayed(const Duration(milliseconds: 300));
+                  //       // Wait for update
+                  //       await Future.delayed(const Duration(milliseconds: 300));
 
-                        // Reload budget
-                        if (context.mounted) {
-                          context.read<BudgetBloc>().add(LoadBudget());
-                        }
+                  //       // Reload budget
+                  //       if (context.mounted) {
+                  //         context.read<BudgetBloc>().add(LoadBudget());
+                  //       }
 
-                        AppUtils.showSuccess("Budget recalculated!");
-                      } catch (e) {
-                        AppUtils.showError(
-                          "Failed to recalculate: ${e.toString()}",
-                        );
-                      }
-                    },
-                    tooltip: "Recalculate Spent",
-                  ),
+                  //       AppUtils.showSuccess("Budget recalculated!");
+                  //     } catch (e) {
+                  //       AppUtils.showError(
+                  //         "Failed to recalculate: ${e.toString()}",
+                  //       );
+                  //     }
+                  //   },
+                  //   tooltip: "Recalculate Spent",
+                  // ),
                   IconButton(
                     icon: const Icon(Icons.edit, size: 20),
                     onPressed: () =>

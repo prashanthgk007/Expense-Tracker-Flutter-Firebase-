@@ -31,16 +31,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.pushNamed(
-            context,
-            AppRoutes.addExpense,
-          );
-
-          if (result == true) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.read<ExpenseBloc>().add(LoadExpensesEvent());
-            });
-          }
+          await Navigator.pushNamed(context, AppRoutes.addExpense);
         },
         child: const Icon(Icons.add),
       ),
@@ -64,12 +55,6 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 AppUtils.showLoading("Updating");
               } else if (state is DeleteExpenseSuccess) {
                 AppUtils.showSuccess("Expense deleted");
-
-                // wait before refresh (optional)
-                await Future.delayed(const Duration(seconds: 1));
-
-                /// Refresh the list
-                context.read<ExpenseBloc>().add(LoadExpensesEvent());
               } else if (state is DeleteExpenseFailure) {
                 AppUtils.showError(state.message);
               }

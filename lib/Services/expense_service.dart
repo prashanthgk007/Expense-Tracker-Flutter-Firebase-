@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
 import 'package:expense_tracker_app/Model/expenseSummaryModel.dart';
@@ -6,18 +5,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class ExpenseService {
   final FirebaseFunctions functions = FirebaseFunctions.instance;
-  final FirebaseFirestore _firestore =
-      FirebaseFirestore.instance;
 
+  /// -------------------- EXPENSES (Single Fetch) --------------------
   Future<List<ExpenseModel>> getExpenses() async {
     final callable = functions.httpsCallable("getExpenses");
+    final response = await callable.call();
 
-    final result = await callable.call();
-    final data = result.data as Map<String, dynamic>;
-    final expensesList = data['expenses'] as List<dynamic>;
+    final data = response.data as Map<String, dynamic>;
+    final list = data['expenses'] as List<dynamic>;
 
-    return expensesList
-        .map((e) => ExpenseModel.fromMap(Map<String, dynamic>.from(e), e['id']))
+    return list
+        .map(
+          (json) =>
+              ExpenseModel.fromMap(Map<String, dynamic>.from(json), json['id']),
+        )
         .toList();
   }
 
@@ -51,49 +52,24 @@ class ExpenseService {
 
   /// ----------------- Budget System -----------------
 
-  Stream<Map<String, dynamic>?> getBudget() {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+  Future<Map<String, dynamic>> getBudget() async {
+    final callable = FirebaseFunctions.instance.httpsCallable("getBudget");
+    final result = await callable.call();
 
-    if (userId == null) {
-      throw Exception("User not logged in");
+    if (result.data == null || result.data is! Map) {
+      throw Exception("Invalid response from server");
     }
 
-    return _firestore
-        .collection("users")
-        .doc(userId)
-        .collection("budget")
-        .doc("budget") // one document only
-        .snapshots()
-        .map((snapshot) {
-          // Ensure we always return data (null if document doesn't exist)
-          return snapshot.data();
-        })
-        .handleError((error) {
-          // Handle any stream errors
-          throw Exception("Failed to load budget: $error");
-        });
+    return Map<String, dynamic>.from(result.data);
   }
 
-  Future<void> updateBudget({
-    required double limit,
-    required double totalSpent,
-  }) async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+  Future<void> updateBudget(double limit) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not logged in");
 
-    if (userId == null) {
-      throw Exception("User not logged in");
-    }
+    final callable = FirebaseFunctions.instance.httpsCallable('updateBudget');
 
-    await _firestore
-        .collection("users")
-        .doc(userId)
-        .collection("budget")
-        .doc("budget")
-        .set({
-          "limit": limit,
-          "totalSpent": totalSpent,
-          "updatedAt": FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    await callable.call({"limit": limit});
   }
 
   /// Calculate total spent from all expenses
@@ -119,106 +95,44 @@ class ExpenseService {
     }
   }
 
-  /// Set budget limit and calculate totalSpent from existing expenses
   Future<void> setBudgetLimit(double limit) async {
     final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not logged in");
 
-    if (user == null) {
-      throw Exception("User not logged in");
-    }
+    final callable = FirebaseFunctions.instance.httpsCallable("setBudgetLimit");
 
-    final userId = user.uid;
+    await callable.call({"limit": limit});
 
-    // Calculate total spent from all expenses
-    double totalSpent = 0.0;
-    try {
-      totalSpent = await calculateTotalSpent();
-      print(
-        "DEBUG: Setting budget with limit: $limit, totalSpent: $totalSpent",
-      );
-    } catch (e) {
-      print("Warning: Could not fetch expenses to calculate totalSpent: $e");
-      // If we can't fetch expenses, try to get existing totalSpent from budget
-      final budgetRef = _firestore
-          .collection("users")
-          .doc(userId)
-          .collection("budget")
-          .doc("budget");
-      try {
-        final budgetDoc = await budgetRef.get();
-        if (budgetDoc.exists) {
-          final budgetData = budgetDoc.data();
-          totalSpent = budgetData?["totalSpent"] != null
-              ? (budgetData!["totalSpent"] as num).toDouble()
-              : 0.0;
-          print("DEBUG: Using existing totalSpent from budget: $totalSpent");
-        }
-      } catch (error) {
-        print("ERROR: Could not get existing totalSpent: $error");
-        // Use 0 if we can't get existing value
-        totalSpent = 0.0;
-      }
-    }
-
-    final budgetRef = _firestore
-        .collection("users")
-        .doc(userId)
-        .collection("budget")
-        .doc("budget");
-
-    // Use set with merge to create or update
-    await budgetRef.set({
-      "limit": limit,
-      "totalSpent": totalSpent,
-      "updatedAt": FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    print(
-      "DEBUG: Budget updated successfully with limit: $limit, totalSpent: $totalSpent",
-    );
+    print("DEBUG: Budget updated using cloud function. Limit: $limit");
   }
 
-  /// Recalculate and update totalSpent from expenses
-  Future<void> recalculateTotalSpent() async {
+  Future<Map<String, dynamic>> recalculateTotalSpent() async {
     final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not logged in");
 
-    if (user == null) {
-      throw Exception("User not logged in");
-    }
-
-    final userId = user.uid;
-    final totalSpent = await calculateTotalSpent();
-
-    final budgetRef = _firestore
-        .collection("users")
-        .doc(userId)
-        .collection("budget")
-        .doc("budget");
-
-    // Get existing limit to preserve it
-    final budgetDoc = await budgetRef.get();
-    final existingLimit = budgetDoc.exists
-        ? (budgetDoc.data()?["limit"] ?? 0.0).toDouble()
-        : 0.0;
-
-    await budgetRef.set({
-      "limit": existingLimit,
-      "totalSpent": totalSpent,
-      "updatedAt": FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
-
-  Future<ExpenseSummary> getExpenseSummary() async {
-    final callable = functions.httpsCallable("getExpenseSummary");
-
+    final callable = FirebaseFunctions.instance.httpsCallable(
+      'recalculateBudget',
+    );
     final result = await callable.call();
 
-    if (result.data == null || result.data is! Map) {
+    if (result.data is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(result.data);
+    }
+
+    throw Exception("Invalid response from server");
+  }
+
+  //Expense Summary / Category
+
+  /// -------------------- EXPENSE SUMMARY (Single Fetch) --------------------
+  Future<ExpenseSummary> getExpenseSummary() async {
+    final callable = functions.httpsCallable("getExpenseSummary");
+    final response = await callable.call();
+
+    if (response.data == null || response.data is! Map) {
       throw Exception("Invalid summary response from server");
     }
 
-    final data = Map<String, dynamic>.from(result.data);
-
-    return ExpenseSummary.fromMap(data);
+    return ExpenseSummary.fromMap(Map<String, dynamic>.from(response.data));
   }
 }

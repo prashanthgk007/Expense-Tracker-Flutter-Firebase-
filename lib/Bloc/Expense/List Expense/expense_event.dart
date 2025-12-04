@@ -1,8 +1,13 @@
-import 'package:equatable/equatable.dart';
-
-abstract class ExpenseEvent extends Equatable {
-  @override
-  List<Object?> get props => [];
-}
+abstract class ExpenseEvent {}
 
 class LoadExpensesEvent extends ExpenseEvent {}
+
+class ExpensesUpdatedEvent extends ExpenseEvent {
+  final List expenses;
+  ExpensesUpdatedEvent(this.expenses);
+}
+
+class ExpensesErrorEvent extends ExpenseEvent {
+  final String message;
+  ExpensesErrorEvent(this.message);
+}

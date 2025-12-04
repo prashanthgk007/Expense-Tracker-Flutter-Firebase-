@@ -1,102 +1,74 @@
 import 'dart:async';
-import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
-import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
-import 'package:expense_tracker_app/Services/expense_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:async';
-import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
-import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
-import 'package:expense_tracker_app/Services/expense_service.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../Services/expense_service.dart';
+import '../../../Services/stream_service.dart';
+import 'budget_event.dart';
+import 'budget_state.dart';
 
 class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
   final ExpenseService _service = ExpenseService();
+  final ExpenseStreamService _streams = ExpenseStreamService();
+
   StreamSubscription? _subscription;
 
   BudgetBloc() : super(BudgetLoading()) {
-    // Existing event handlers
-    on<LoadBudget>(_onLoadBudget);
-    on<RefreshBudget>(_onRefreshBudget);
+    on<LoadBudget>(_onLoad);
     on<BudgetUpdatedEvent>(_onBudgetUpdated);
-    on<BudgetErrorEvent>(_onBudgetError);
+    on<BudgetErrorEvent>(_onError);
 
-    // *** NEW EVENTS ADDED HERE ***
-    on<SetBudgetLimit>(_onSetBudgetLimit);
-    on<RecalculateBudget>(_onRecalculateBudget);
+    // Actions
+    on<SetBudgetLimit>(_onSetLimit);
+    on<RecalculateBudget>(_onRecalculate);
   }
 
-  // ---- EVENT HANDLERS ----
+  // ---------------- LOAD STREAM ----------------
 
-  void _onLoadBudget(LoadBudget event, Emitter<BudgetState> emit) {
-    _startRealTimeStream();
-  }
-
-  void _onRefreshBudget(RefreshBudget event, Emitter<BudgetState> emit) {
+  void _onLoad(LoadBudget event, Emitter<BudgetState> emit) {
+    emit(BudgetLoading());
     _subscription?.cancel();
-    _startRealTimeStream();
+
+    _subscription = _streams.streamBudget().listen(
+      (data) {
+        add(BudgetUpdatedEvent(data));
+      },
+      onError: (e) {
+        add(BudgetErrorEvent(e.toString()));
+      },
+    );
   }
 
-  void _onBudgetUpdated(BudgetUpdatedEvent event, Emitter<BudgetState> emit) {
+  // ---------------- STREAM STATE HANDLERS ----------------
+
+  void _onBudgetUpdated(
+      BudgetUpdatedEvent event, Emitter<BudgetState> emit) {
     emit(BudgetLoaded(event.data));
   }
 
-  void _onBudgetError(BudgetErrorEvent event, Emitter<BudgetState> emit) {
+  void _onError(BudgetErrorEvent event, Emitter<BudgetState> emit) {
     emit(BudgetError(event.message));
   }
 
-  /// 👉 NEW HANDLER: Set Budget Limit
-  Future<void> _onSetBudgetLimit(
+  // ---------------- ACTION HANDLERS ----------------
+
+  Future<void> _onSetLimit(
       SetBudgetLimit event, Emitter<BudgetState> emit) async {
     emit(BudgetLoading());
+
     try {
       await _service.setBudgetLimit(event.limit);
-      add(LoadBudget()); // refresh UI
     } catch (e) {
       emit(BudgetError(e.toString()));
     }
   }
 
-  /// 👉 NEW HANDLER: Recalculate Budget
-  Future<void> _onRecalculateBudget(
+  Future<void> _onRecalculate(
       RecalculateBudget event, Emitter<BudgetState> emit) async {
     emit(BudgetLoading());
+
     try {
       await _service.recalculateTotalSpent();
-      add(LoadBudget()); // refresh UI
     } catch (e) {
       emit(BudgetError(e.toString()));
-    }
-  }
-
-  // ---- REALTIME LISTENER ----
-
-  void _startRealTimeStream() {
-    _subscription?.cancel();
-
-    try {
-      _subscription = _service.getBudget().listen(
-        (data) {
-          add(BudgetUpdatedEvent(data));
-        },
-        onError: (e) {
-          final msg = e.toString().toLowerCase();
-          if (msg.contains('permission-denied') ||
-              msg.contains('missing or insufficient')) {
-            add(BudgetUpdatedEvent(null));
-          } else {
-            add(BudgetErrorEvent(e.toString()));
-          }
-        },
-        cancelOnError: false,
-      );
-    } catch (e) {
-      final msg = e.toString().toLowerCase();
-      if (msg.contains('permission-denied') ||
-          msg.contains('missing or insufficient')) {
-        add(BudgetUpdatedEvent(null));
-      } else {
-        add(BudgetErrorEvent(e.toString()));
-      }
     }
   }
 

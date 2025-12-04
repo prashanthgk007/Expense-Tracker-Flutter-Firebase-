@@ -1,24 +1,46 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../Services/expense_service.dart';
+import '../../../Services/stream_service.dart';
 import 'expense_event.dart';
 import 'expense_state.dart';
 
 class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
-  final ExpenseService expenseService = ExpenseService();
+  final ExpenseStreamService _streams = ExpenseStreamService();
+  StreamSubscription? _subscription;
 
   ExpenseBloc() : super(ExpenseInitial()) {
-    on<LoadExpensesEvent>(_loadExpenses);
+    on<LoadExpensesEvent>(_onLoad);
+    on<ExpensesUpdatedEvent>(_onExpensesUpdated);
+    on<ExpensesErrorEvent>(_onError);
   }
 
-  Future<void> _loadExpenses(
-      LoadExpensesEvent event, Emitter<ExpenseState> emit) async {
-    try {
-      emit(ExpenseLoading());
+  void _onLoad(LoadExpensesEvent event, Emitter<ExpenseState> emit) {
+    emit(ExpenseLoading());
+    _subscription?.cancel();
 
-      final expenses = await expenseService.getExpenses();
-      emit(ExpenseLoaded(expenses));
-    } catch (e) {
-      emit(ExpenseError(e.toString()));
-    }
+    _subscription = _streams.streamExpenses().listen(
+      (expenses) {
+        add(ExpensesUpdatedEvent(expenses));
+      },
+      onError: (e) {
+        add(ExpensesErrorEvent(e.toString()));
+      },
+    );
+  }
+
+  void _onExpensesUpdated(
+      ExpensesUpdatedEvent event, Emitter<ExpenseState> emit) {
+    emit(ExpenseLoaded(event.expenses));
+  }
+
+  void _onError(
+      ExpensesErrorEvent event, Emitter<ExpenseState> emit) {
+    emit(ExpenseError(event.message));
+  }
+
+  @override
+  Future<void> close() {
+    _subscription?.cancel();
+    return super.close();
   }
 }
