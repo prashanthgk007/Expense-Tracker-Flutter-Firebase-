@@ -21,6 +21,16 @@ class AppUtils {
     EasyLoading.dismiss();
   }
 
+  static void showInfo(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.blueAccent,
+    ),
+  );
+}
+
+
   // ---------------------------------------------------
   // ✔ SNACKBAR
   // ---------------------------------------------------

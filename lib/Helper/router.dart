@@ -1,5 +1,7 @@
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Expense/Edit%20Expense/edit_expense_bloc.dart';
+import 'package:expense_tracker_app/Bloc/Users/user_bloc.dart';
+import 'package:expense_tracker_app/Bloc/Users/user_event.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
 import 'package:expense_tracker_app/Screens/Add/addExpense.dart';
 import 'package:expense_tracker_app/Screens/Details/detailScreen.dart';
@@ -12,6 +14,7 @@ import 'package:expense_tracker_app/Screens/loginScreen.dart';
 import 'package:expense_tracker_app/Screens/settingsScreen.dart';
 import 'package:expense_tracker_app/Screens/signUpScreen.dart';
 import 'package:expense_tracker_app/Screens/splashScreen.dart';
+import 'package:expense_tracker_app/Services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -80,8 +83,13 @@ class AppRoutes {
       case expenseDetails:
         return MaterialPageRoute(builder: (_) => ExpenseDetailsScreen());
 
-      case setting:
-        return MaterialPageRoute(builder: (_) => const SettingsScreen());
+  case setting:
+    return MaterialPageRoute(
+      builder: (_) => BlocProvider(
+        create: (context) => UserBloc()..add(GetUserProfileEvent()),
+        child: const SettingsScreen(),
+      ),
+    );
 
       case forgotPassword:
         return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());

@@ -1,6 +1,6 @@
 
 import { setGlobalOptions } from "firebase-functions";
-import { onRequest } from "firebase-functions/https";
+import { HttpsError, onRequest } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
@@ -67,7 +67,133 @@ export const notifyOnExpenseAdded = onDocumentCreated(
     });
   });
 
-  //Expense Functions
+//User Functions
+
+export const signupUser = onCall(async (request) => {
+  const { email, password, username } = request.data;
+
+  if (!email || !password || !username) {
+    throw new HttpsError("invalid-argument", "Missing required fields.");
+  }
+
+  try {
+    // 1️⃣ Create user in Firebase Auth
+    const userRecord = await admin.auth().createUser({
+      email,
+      password,
+      displayName: username,
+    });
+
+    // 2️⃣ Create user document in Firestore
+    await admin.firestore().collection("users").doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      email,
+      name: username,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return {
+      success: true,
+      uid: userRecord.uid,
+      email,
+      username,
+    };
+  } catch (err: any) {
+    console.error(err);
+    throw new HttpsError("unknown", "Signup failed");
+  }
+});
+
+
+export const createUserProfile = onCall(async (request) => {
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new Error("Unauthorized");
+
+  const { username, email } = request.data;
+
+  await admin.firestore().collection("users").doc(uid).set({
+    uid,
+    username,
+    email,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  return { success: true };
+});
+
+
+export const getUserProfile = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new Error("Unauthorized");
+
+  const userDoc = await admin.firestore().collection("users").doc(uid).get();
+
+  if (!userDoc.exists) {
+    return { success: false, message: "No profile found" };
+  }
+
+  return { success: true, user: userDoc.data() };
+});
+
+
+export const updateUserProfile = onCall(async (request) => {
+  if (!request.auth) {
+    throw new Error("Not authenticated");
+  }
+
+  const uid = request.auth.uid;
+  const { name, email, password } = request.data;
+
+  const updateData: admin.auth.UpdateRequest = {};
+
+  try {
+    // 🟦 Update Firestore + Auth Name
+    if (typeof name === "string" && name.trim().length > 0) {
+      updateData.displayName = name.trim();
+
+      await admin.firestore().collection("users").doc(uid).update({
+        name: name.trim(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    // 🟨 Update Email
+    if (
+      typeof email === "string" &&
+      /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)
+    ) {
+      updateData.email = email;
+
+      await admin.firestore().collection("users").doc(uid).update({
+        email,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    // 🟥 Update Password
+    if (typeof password === "string" && password.length >= 6) {
+      updateData.password = password;
+    }
+
+    // ⛏ Apply Firebase Auth updates
+    if (Object.keys(updateData).length > 0) {
+      await admin.auth().updateUser(uid, updateData);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    const message = error instanceof Error ? error.message : "Update failed";
+    throw new Error(message);
+  }
+}
+);
+
+
+
+//Expense Functions
 
 export const getExpenses = onCall(async (request) => {
   const uid = request.auth?.uid;
