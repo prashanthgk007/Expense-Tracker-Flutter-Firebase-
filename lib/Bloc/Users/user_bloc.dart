@@ -22,19 +22,19 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     // Update user profile
     on<UpdateUserProfileEvent>((event, emit) async {
-      emit(UserLoading());
+      emit(UserUpdating());
+
       try {
-        final success = await _service.updateUserProfile(
+        final updatedUser = await _service.updateUserProfile(
           name: event.name,
           email: event.email,
           password: event.password,
         );
 
-        if (success) {
-          final updatedUser = UserModel.fromMap(await _service.getUserProfile());
-          emit(UserUpdated(user: updatedUser, message: "Profile updated successfully"));
+        if (updatedUser != null) {
+          emit(UserUpdateSuccess());
         } else {
-          emit(UserFailure("Failed to update profile"));
+          emit(UserFailure("Failed to update user."));
         }
       } catch (e) {
         emit(UserFailure(e.toString()));

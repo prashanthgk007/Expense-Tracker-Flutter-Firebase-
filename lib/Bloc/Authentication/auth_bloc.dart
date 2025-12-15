@@ -4,9 +4,9 @@ import 'package:expense_tracker_app/Bloc/Authentication/auth_state.dart';
 import 'package:expense_tracker_app/Services/auth_service.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final AuthService service;
+  final AuthService service = AuthService();
   
-  AuthBloc(this.service) : super(AuthInitial()) {
+  AuthBloc() : super(AuthInitial()) {
     // LOGIN
     on<AuthLoginEvent>((event, emit) async {
       emit(AuthLoading());
@@ -44,9 +44,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthLoading());
       try {
         await service.resetPassword(event.email);
-        emit(AuthSuccess());
+        emit(ResetPasswordSuccess());
       } catch (e) {
-        emit(AuthFailure(e.toString()));
+        emit(ResetPasswordFailure(e.toString()));
       }
     });
   }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
+import 'package:expense_tracker_app/Model/userModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
@@ -21,7 +22,7 @@ class AuthService {
     return Map<String, dynamic>.from(response.data);
   }
 
-  Future<bool> updateUserProfile({
+  Future<UserModel?> updateUserProfile({
     String? name,
     String? email,
     String? password,
@@ -36,7 +37,13 @@ class AuthService {
       "password": password,
     });
 
-    return response.data["success"] == true;
+    if (response.data["success"] == true && response.data["user"] != null) {
+      return UserModel.fromMap(
+        Map<String, dynamic>.from(response.data["user"]),
+      );
+    }
+
+    return null;
   }
 
   Future<bool> signup(String email, String password, String username) async {
@@ -67,6 +74,10 @@ class AuthService {
   }
 
   Future<void> resetPassword(String email) async {
-    await _auth.sendPasswordResetEmail(email: email);
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw Exception("Failed to send reset email: ${e.toString()}");
+    }
   }
 }

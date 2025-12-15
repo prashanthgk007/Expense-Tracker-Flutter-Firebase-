@@ -7,6 +7,8 @@ class BudgetLoaded extends BudgetState {
   BudgetLoaded(this.budget);
 }
 
+class BudgetUpdatedSuccess extends BudgetState {}
+
 class BudgetError extends BudgetState {
   final String message;
   BudgetError(this.message);

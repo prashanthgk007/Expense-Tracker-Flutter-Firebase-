@@ -1,9 +1,9 @@
+import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Authentication/auth_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Authentication/auth_event.dart';
 import 'package:expense_tracker_app/Bloc/Authentication/auth_state.dart';
-import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,14 +17,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController emailCtrl = TextEditingController();
   final TextEditingController passCtrl = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _autoValidate = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff0c1324),
+      backgroundColor: Colors.white,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
@@ -37,26 +37,28 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context, state) {
           return SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
               child: Form(
                 key: _formKey,
-                autovalidateMode: 
-                    _autoValidate ? AutovalidateMode.always : AutovalidateMode.disabled,
+                autovalidateMode: _autoValidate
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
                       "Welcome Back 👋",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       "Login to continue",
-                      style: TextStyle(color: Colors.white54),
+                      style: TextStyle(color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 45),
 
@@ -104,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Login Button
                     state is AuthLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const CircularProgressIndicator()
                         : GestureDetector(
                             onTap: () {
                               if (_formKey.currentState!.validate()) {
@@ -123,10 +125,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                gradient: const LinearGradient(
+                                gradient: LinearGradient(
                                   colors: [
-                                    Color(0xff6A5AE0),
-                                    Color(0xff7F8CFF)
+                                    Colors.blue.shade600,
+                                    Colors.blue.shade400
                                   ],
                                 ),
                               ),
@@ -145,9 +147,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 15),
 
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(
-                          context, AppRoutes.forgotPassword),
-                      child: const Text("Forgot Password?"),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
                     ),
 
                     const SizedBox(height: 10),
@@ -155,9 +160,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           "Don't have an account?",
-                          style: TextStyle(color: Colors.white54),
+                          style: TextStyle(color: Colors.grey.shade700),
                         ),
                         TextButton(
                           onPressed: () =>
@@ -192,24 +197,25 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: const Color(0xff1A2238),
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(14),
       ),
       child: TextFormField(
         controller: controller,
         validator: validator,
         obscureText: isPassword ? obscure : false,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.black),
         decoration: InputDecoration(
           border: InputBorder.none,
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white54),
-          prefixIcon: Icon(icon, color: Colors.white38),
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+          prefixIcon: Icon(icon, color: Colors.grey.shade400),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
-                      obscure ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.white54),
+                    obscure ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.grey.shade600,
+                  ),
                   onPressed: togglePassword,
                 )
               : null,
@@ -218,3 +224,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+

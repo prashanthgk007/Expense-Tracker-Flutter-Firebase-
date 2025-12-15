@@ -5,8 +5,10 @@ import 'package:expense_tracker_app/Bloc/Expense/Delete%20Expense/delete_expense
 import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_event.dart';
 import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_state.dart';
+import 'package:expense_tracker_app/Helper/emptyStateWidget.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
+import 'package:expense_tracker_app/Widgets/floatingActionButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -27,13 +29,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Expenses")),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.pushNamed(context, AppRoutes.addExpense);
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: CommonFAB(
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.addExpense),
       ),
 
       body: MultiBlocListener(
@@ -77,7 +74,12 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           final expenses = state.expenses;
 
           if (expenses.isEmpty) {
-            return const Center(child: Text("No expenses found."));
+            return EmptyStateWidget(
+              title: "No Expenses Yet",
+              description:
+                  "You haven't added any expenses. Tap below to add your first expense.",
+              icon: Icons.receipt_long_outlined,
+            );
           }
 
           return ListView.builder(
@@ -86,128 +88,141 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             itemBuilder: (context, index) {
               final expense = expenses[index];
 
-              return Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: const [
+                    BoxShadow(
+                      blurRadius: 12,
+                      color: Colors.black12,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
                 ),
-                margin: const EdgeInsets.only(bottom: 12),
                 child: Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// TOP ROW — Title + Amount
+                      /// TITLE + AMOUNT
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            expense.title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Text(
+                              expense.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
 
-                          Text(
-                            "₹${expense.amount.toStringAsFixed(2)}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Text(
+                              "₹${expense.amount.toStringAsFixed(0)}",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 10),
 
-                      /// CATEGORY + DATE ROW
+                      /// CATEGORY + DATE
                       Row(
                         children: [
-                          Icon(
-                            Icons.category,
-                            size: 18,
-                            color: Colors.grey.shade600,
+                          _infoChip(
+                            icon: Icons.category_outlined,
+                            text: expense.category,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            expense.category,
-                            style: TextStyle(color: Colors.grey.shade700),
-                          ),
-                          const SizedBox(width: 15),
-
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "${expense.date.day}/${expense.date.month}/${expense.date.year}",
-                            style: TextStyle(color: Colors.grey.shade700),
+                          const SizedBox(width: 8),
+                          _infoChip(
+                            icon: Icons.calendar_month_outlined,
+                            text:
+                                "${expense.date.day}/${expense.date.month}/${expense.date.year}",
                           ),
                         ],
                       ),
 
-                      if (expense.notes.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Text(
-                            expense.notes,
-                            style: TextStyle(color: Colors.grey.shade600),
+                      if (expense.notes.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          expense.notes,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
                           ),
                         ),
+                      ],
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
 
-                      /// ACTION BUTTONS
+                      /// ACTIONS
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            splashRadius: 22,
+                            icon: const Icon(Icons.edit_outlined),
+                            color: Colors.blueGrey,
                             onPressed: () async {
-                              final result = await Navigator.pushNamed(
+                              await Navigator.pushNamed(
                                 context,
                                 AppRoutes.editExpense,
                                 arguments: expense,
                               );
-
-                              if (result == true) {
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  context.read<ExpenseBloc>().add(
-                                    LoadExpensesEvent(),
-                                  );
-                                });
-                              }
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            splashRadius: 22,
+                            icon: const Icon(Icons.delete_outline),
+                            color: Colors.redAccent,
                             onPressed: () {
                               showDialog(
                                 context: context,
                                 builder: (_) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
                                   title: const Text("Delete Expense"),
                                   content: const Text(
-                                    "Are you sure you want to delete this item?",
+                                    "Are you sure you want to delete this expense?",
                                   ),
                                   actions: [
                                     TextButton(
-                                      child: const Text("Cancel"),
                                       onPressed: () => Navigator.pop(context),
+                                      child: const Text("Cancel"),
                                     ),
-                                    TextButton(
-                                      child: const Text("Delete"),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                      ),
                                       onPressed: () {
                                         context.read<DeleteExpenseBloc>().add(
                                           DeleteExpenseRequested(expense.id),
                                         );
                                         Navigator.pop(context);
                                       },
+                                      child: const Text("Delete"),
                                     ),
                                   ],
                                 ),
@@ -226,6 +241,26 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
         return const SizedBox.shrink();
       },
+    );
+  }
+
+  Widget _infoChip({required IconData icon, required String text}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: Colors.grey.shade700),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+          ),
+        ],
+      ),
     );
   }
 }

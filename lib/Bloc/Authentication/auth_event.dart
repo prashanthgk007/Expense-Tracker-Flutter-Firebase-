@@ -19,3 +19,4 @@ class AuthResetPasswordEvent extends AuthEvent {
   final String email;
   AuthResetPasswordEvent(this.email);
 }
+

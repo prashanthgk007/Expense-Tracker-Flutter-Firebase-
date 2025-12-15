@@ -6,16 +6,14 @@ class UserInitial extends UserState {}
 
 class UserLoading extends UserState {}
 
+class UserUpdating extends UserState {}
+
 class UserLoaded extends UserState {
   final UserModel user;
   UserLoaded(this.user);
 }
 
-class UserUpdated extends UserState {
-  final UserModel user;
-  final String message;
-  UserUpdated({required this.user, required this.message});
-}
+class UserUpdateSuccess extends UserState {}
 
 class UserSuccess extends UserState {
   final String message;

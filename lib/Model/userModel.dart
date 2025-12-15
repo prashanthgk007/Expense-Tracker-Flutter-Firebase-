@@ -13,7 +13,7 @@ class UserModel {
     final userMap = map['user'] ?? map; // handle nested 'user' key if exists
     return UserModel(
       uid: userMap['uid'] ?? '',
-      username: userMap['username'] ?? '',
+      username: userMap['name'] ?? '',
       email: userMap['email'] ?? '',
     );
   }
@@ -21,7 +21,7 @@ class UserModel {
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
-      'username': username,
+      'name': username,
       'email': email,
     };
   }

@@ -139,6 +139,7 @@ export const getUserProfile = onCall(async (request) => {
 
 
 export const updateUserProfile = onCall(async (request) => {
+
   if (!request.auth) {
     throw new Error("Not authenticated");
   }
@@ -147,16 +148,15 @@ export const updateUserProfile = onCall(async (request) => {
   const { name, email, password } = request.data;
 
   const updateData: admin.auth.UpdateRequest = {};
+  const firestoreUpdate: Record<string, any> = {
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
 
   try {
-    // 🟦 Update Firestore + Auth Name
+    // 🟦 Update Name
     if (typeof name === "string" && name.trim().length > 0) {
       updateData.displayName = name.trim();
-
-      await admin.firestore().collection("users").doc(uid).update({
-        name: name.trim(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      firestoreUpdate.name = name.trim();
     }
 
     // 🟨 Update Email
@@ -165,11 +165,7 @@ export const updateUserProfile = onCall(async (request) => {
       /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)
     ) {
       updateData.email = email;
-
-      await admin.firestore().collection("users").doc(uid).update({
-        email,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      firestoreUpdate.email = email;
     }
 
     // 🟥 Update Password
@@ -177,19 +173,35 @@ export const updateUserProfile = onCall(async (request) => {
       updateData.password = password;
     }
 
-    // ⛏ Apply Firebase Auth updates
+    // 🔑 Apply Firebase Auth updates
     if (Object.keys(updateData).length > 0) {
       await admin.auth().updateUser(uid, updateData);
     }
 
-    return { success: true };
+    // 🏗 Create or Update Firestore Doc (Fix)
+    await admin.firestore().collection("users").doc(uid).set(firestoreUpdate, { merge: true });
+
+    // 📥 Return updated data
+    const userRecord = await admin.auth().getUser(uid);
+    const userDoc = await admin.firestore().collection("users").doc(uid).get();
+
+    return {
+      success: true,
+      user: {
+        uid,
+        name: userRecord.displayName,
+        email: userRecord.email,
+        createdAt: userDoc.data()?.createdAt ?? null,
+        updatedAt: userDoc.data()?.updatedAt ?? null,
+      },
+    };
+
   } catch (error) {
-    console.error(error);
-    const message = error instanceof Error ? error.message : "Update failed";
-    throw new Error(message);
+    console.error("🔥 updateUserProfile Error:", error);
+    throw new Error(error instanceof Error ? error.message : "Update failed");
   }
-}
-);
+});
+
 
 
 

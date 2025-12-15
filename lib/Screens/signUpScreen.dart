@@ -24,8 +24,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff0c1324),
-
+      backgroundColor: Colors.white,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoading) {
@@ -41,11 +40,11 @@ class _SignupScreenState extends State<SignupScreen> {
             AppUtils.showError(state.error);
           }
         },
-
         builder: (context, state) {
           return SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
               child: Form(
                 key: _formKey,
                 autovalidateMode: _autoValidate
@@ -57,16 +56,15 @@ class _SignupScreenState extends State<SignupScreen> {
                     const Text(
                       "Create Account ✨",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       "Fill the details to get started",
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 40),
 
@@ -85,7 +83,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 16),
 
                     // Email Field
@@ -104,7 +101,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 16),
 
                     // Password Field
@@ -127,12 +123,11 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 30),
 
                     // Submit Button
                     state is AuthLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const CircularProgressIndicator()
                         : GestureDetector(
                             onTap: () {
                               if (_formKey.currentState!.validate()) {
@@ -152,10 +147,10 @@ class _SignupScreenState extends State<SignupScreen> {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                gradient: const LinearGradient(
+                                gradient: LinearGradient(
                                   colors: [
-                                    Color(0xff6A5AE0),
-                                    Color(0xff7F8CFF)
+                                    Colors.blue.shade600,
+                                    Colors.blue.shade400
                                   ],
                                 ),
                               ),
@@ -170,16 +165,17 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
                           ),
-
                     const SizedBox(height: 20),
 
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text(
+                      child: Text(
                         "Already have an account? Login",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -203,24 +199,24 @@ class _SignupScreenState extends State<SignupScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: const Color(0xff1A2238),
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(14),
       ),
       child: TextFormField(
         controller: controller,
         validator: validator,
         obscureText: isPassword ? obscure : false,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.black),
         decoration: InputDecoration(
           border: InputBorder.none,
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white54),
-          prefixIcon: Icon(icon, color: Colors.white38),
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+          prefixIcon: Icon(icon, color: Colors.grey.shade400),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     obscure ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.white54,
+                    color: Colors.grey.shade600,
                   ),
                   onPressed: togglePassword,
                 )
@@ -230,3 +226,4 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 }
+

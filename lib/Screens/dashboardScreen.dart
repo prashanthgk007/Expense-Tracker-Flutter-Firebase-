@@ -1,16 +1,14 @@
-// -------------------------------------------
-// HOME DASHBOARD
-// -------------------------------------------
-import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_bloc.dart';
-import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_event.dart';
-import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_state.dart';
+// ---------------------------------------------------------
+// MODERN DASHBOARD UI
+// ---------------------------------------------------------
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
-import 'package:expense_tracker_app/Helper/enum.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_bloc.dart';
+import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_state.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
-import 'package:expense_tracker_app/Screens/Charts/dashboardCharts.dart';
+import 'package:expense_tracker_app/Widgets/floatingActionButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,238 +20,183 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  ChartType selectedChart = ChartType.pie;
-
-  final List<String> chartOptions = ["Pie", "Bar", "Area"];
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Dashboard"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.setting),
+      backgroundColor: const Color(0xfff6f7fb),
+
+      floatingActionButton: CommonFAB(
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.addExpense),
+      ),
+
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<BudgetBloc, BudgetState>(
+            listener: (context, state) {
+              // if (state is BudgetLoading) AppUtils.showLoading("Updating...");
+              if (state is BudgetLoaded) {
+                AppUtils.dismiss();
+              }
+              if (state is BudgetError) {
+                AppUtils.dismiss();
+                AppUtils.showError(state.message);
+              }
+            },
           ),
         ],
-      ),
 
-      // FLOATING BUTTON (optional)
-      floatingActionButton: FloatingActionButton(
-        onPressed: () =>
-            Navigator.pushNamed(context, AppRoutes.addExpense).then((value) {
-            }),
-        child: const Icon(Icons.add),
-      ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionTitle("Monthly Budget"),
+              const SizedBox(height: 12),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // -------------------------------------------
-            // 1. SUMMARY CARDS
-            // -------------------------------------------
-            const Text(
-              "Summary",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 12),
-
-            BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
-              builder: (context, state) {
-                if (state is ExpenseSummaryLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is ExpenseSummaryLoaded) {
-                  return Row(
-                    children: [
-                      _summaryCard(
-                        "Total Spent",
-                        "₹${state.summary.totalSpent}",
-                        Icons.wallet,
+              BlocBuilder<BudgetBloc, BudgetState>(
+                builder: (context, state) {
+                  // 🔄 Loading / Updating
+                  if (state is BudgetLoading) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator(),
                       ),
-                      const SizedBox(width: 12),
-                      _summaryCard(
-                        "This Month",
-                        "₹${state.summary.thisMonthSpent}",
-                        Icons.calendar_today,
-                      ),
-                    ],
-                  );
-                }
-
-                return Row(
-                  children: [
-                    _summaryCard("Total Spent", "--", Icons.wallet),
-                    const SizedBox(width: 12),
-                    _summaryCard("This Month", "--", Icons.calendar_today),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 25),
-
-            // -------------------------------------------
-            // 2. CATEGORY BREAKDOWN
-            // -------------------------------------------
-            const Text(
-              "Category Breakdown",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
-              builder: (context, state) {
-                if (state is ExpenseSummaryLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is ExpenseSummaryLoaded) {
-                  final categories = state.summary.categories;
-
-                  if (categories.isEmpty) {
-                    return const Text("No spending data yet.");
+                    );
                   }
 
-                  final total = state.summary.totalSpent;
+                  // ✅ Budget Loaded
+                  if (state is BudgetLoaded) {
+                    if (state.budget != null) {
+                      final limit = (state.budget!["limit"] ?? 0).toDouble();
+                      final spent = (state.budget!["totalSpent"] ?? 0)
+                          .toDouble();
+                      final percent = limit > 0 ? spent / limit : 0;
 
-                  return Column(
-                    children: categories.entries.map((entry) {
-                      final percent = total > 0
-                          ? (entry.value / total).toDouble()
-                          : 0.0;
+                      return _modernBudgetCard(limit, spent, percent);
+                    }
 
-                      return _categoryTitle(
-                        entry.key,
-                        "₹${entry.value}",
-                        percent, // now double ✔️
-                      );
-                    }).toList(),
-                  );
-                }
+                    // ❗ No budget set
+                    return _noBudgetBox(context);
+                  }
 
-                return const Text("No data available");
-              },
-            ),
+                  // ❌ Error or initial fallback
+                  return const SizedBox.shrink();
+                },
+              ),
 
-            // const SizedBox(height: 25),
+              const SizedBox(height: 30),
 
-            // // -------------------------------------------
-            // // 3. RECENT TRANSACTIONS
-            // // -------------------------------------------
-            // const Text(
-            //   "Recent Transactions",
-            //   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            // ),
+              _sectionTitle("Summary"),
+              const SizedBox(height: 14),
 
-            // const SizedBox(height: 10),
-
-            // _recentTransaction("Food", "₹250", "Today"),
-            // _recentTransaction("Travel", "₹1200", "Yesterday"),
-            // _recentTransaction("Shopping", "₹1800", "2 days ago"),
-            const SizedBox(height: 25),
-
-            // -------------------------------------------
-            // 5. BUDGET TRACKING
-            // -------------------------------------------
-            const Text(
-              "Budget Tracking",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            BlocBuilder<BudgetBloc, BudgetState>(
-              builder: (context, state) {
-                if (state is BudgetLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is BudgetError) {
-                  return Text(
-                    "Error: ${state.message}",
-                    style: const TextStyle(color: Colors.red),
-                  );
-                }
-
-                if (state is BudgetLoaded && state.budget != null) {
-                  final budget = state.budget!;
-                  final double limit = (budget["limit"] ?? 0).toDouble();
-                  final double spent = (budget["totalSpent"] ?? 0).toDouble();
-                  final double percent = limit > 0 ? spent / limit : 0;
-
-                  return _budgetCard(limit, spent, percent);
-                }
-
-                return GestureDetector(
-                  onTap: () => _showEditBudgetDialog(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
+                builder: (context, state) {
+                  if (state is ExpenseSummaryLoaded) {
+                    return Row(
                       children: [
-                        const Text(
-                          "No budget set yet",
-                          style: TextStyle(fontSize: 16),
+                        _summaryCard(
+                          title: "Total Spent",
+                          amount: "₹${state.summary.totalSpent}",
+                          icon: Icons.account_balance_wallet_outlined,
+                          color: Colors.blue,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () => _showEditBudgetDialog(context),
-                          tooltip: "Set Budget",
+                        const SizedBox(width: 12),
+                        _summaryCard(
+                          title: "This Month",
+                          amount: "₹${state.summary.thisMonthSpent}",
+                          icon: Icons.calendar_month_outlined,
+                          color: Colors.purple,
                         ),
                       ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  }
+                  return const Center(child: CircularProgressIndicator());
+                },
+              ),
 
-            const SizedBox(height: 30),
-            // DashboardCharts(),
-            // const SizedBox(height: 25),
-          ],
+              const SizedBox(height: 30),
+
+              _sectionTitle("Category Breakdown"),
+              const SizedBox(height: 12),
+
+              BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
+                builder: (context, state) {
+                  if (state is ExpenseSummaryLoaded) {
+                    if (state.summary.categories.isEmpty) {
+                      return const Text("No data yet.");
+                    }
+
+                    final total = state.summary.totalSpent;
+
+                    return Column(
+                      children: state.summary.categories.entries.map((entry) {
+                        final percent = total > 0 ? entry.value / total : 0.0;
+
+                        return _modernCategoryTile(
+                          entry.key,
+                          entry.value,
+                          percent,
+                        );
+                      }).toList(),
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // -----------------------------
-  // SUB WIDGETS
-  // -----------------------------
+  // ---------------------------------------------------------
+  // UI COMPONENTS
+  // ---------------------------------------------------------
 
-  Widget _summaryCard(String title, String amount, IconData icon) {
+  Widget _sectionTitle(String text) {
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+    );
+  }
+
+  Widget _summaryCard({
+    required String title,
+    required String amount,
+    required IconData icon,
+    required Color color,
+  }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.blue.shade50,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+            BoxShadow(
+              blurRadius: 12,
+              color: Colors.black12,
+              offset: Offset(1, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 30, color: Colors.blue),
+            Icon(icon, size: 30, color: color),
             const SizedBox(height: 10),
             Text(
               amount,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             Text(
               title,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -261,237 +204,217 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _categoryBreakdown() {
-    return Column(
-      children: [
-        _categoryTitle("Food", "₹2500", 0.40),
-        _categoryTitle("Travel", "₹1200", 0.20),
-        _categoryTitle("Shopping", "₹1800", 0.25),
-        _categoryTitle("Bills", "₹1000", 0.15),
-      ],
-    );
-  }
-
-  Widget _categoryTitle(String title, String amount, double percent) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _modernCategoryTile(String title, double amount, double percent) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(blurRadius: 8, offset: Offset(1, 2), color: Colors.black12),
+        ],
+      ),
       child: Row(
         children: [
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
           Expanded(
             flex: 2,
-            child: LinearProgressIndicator(
-              value: percent,
-              backgroundColor: Colors.grey.shade300,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: LinearProgressIndicator(
+                value: percent,
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade300,
+                valueColor: AlwaysStoppedAnimation(Colors.blueAccent.shade400),
+              ),
             ),
           ),
           const SizedBox(width: 10),
-          Text(amount, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text("₹$amount", style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  Widget _recentTransaction(String title, String amount, String time) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.receipt_long),
-        title: Text(title),
-        subtitle: Text(time),
-        trailing: Text(
-          amount,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _modernBudgetCard(double limit, double spent, double percent) {
+    // 🎨 Dynamic colors based on usage
+    Color startColor;
+    Color endColor;
+
+    if (percent < 0.5) {
+      startColor = Colors.green.shade600.withOpacity(0.85);
+      endColor = Colors.green.shade400.withOpacity(0.65);
+    } else if (percent < 0.8) {
+      startColor = Colors.orange.shade600.withOpacity(0.85);
+      endColor = Colors.orange.shade400.withOpacity(0.65);
+    } else {
+      startColor = Colors.red.shade700.withOpacity(0.85);
+      endColor = Colors.red.shade400.withOpacity(0.65);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [startColor, endColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 14,
+            color: startColor.withOpacity(0.4),
+            offset: const Offset(1, 6),
+          ),
+        ],
+      ),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// HEADER
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Budget Overview",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              InkWell(
+                onTap: () => _showEditBudgetDialog(context, limit),
+                child: const Icon(Icons.edit, color: Colors.white),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          /// PROGRESS BAR
+          ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: LinearProgressIndicator(
+              value: percent.clamp(0.0, 1.0),
+              minHeight: 10,
+              backgroundColor: Colors.white.withOpacity(0.25),
+              valueColor: const AlwaysStoppedAnimation(Colors.white),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          /// TEXT
+          Text(
+            "₹${spent.toStringAsFixed(0)} spent of ₹${limit.toStringAsFixed(0)}",
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          /// STATUS LABEL (optional but professional)
+          Text(
+            percent >= 1
+                ? "Budget exceeded"
+                : percent >= 0.8
+                ? "Approaching limit"
+                : "Within budget",
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 15),
+        padding: const EdgeInsets.all(8),
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.black12,
+        ),
+        child: Icon(icon, color: Colors.black),
+      ),
+    );
+  }
+
+  Widget _noBudgetBox(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showEditBudgetDialog(context, null),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("No budget set yet", style: TextStyle(fontSize: 16)),
+            Icon(Icons.add),
+          ],
         ),
       ),
     );
   }
 
-  Widget _chartView() {
-    if (selectedChart == "Daily") {
-      return _dailyChart();
-    } else if (selectedChart == "Weekly") {
-      return _weeklyChart();
-    } else {
-      return _monthlyChart();
-    }
-  }
+  // ---------------------------------------------------------
+  // BUDGET POPUP
+  // ---------------------------------------------------------
 
-  Widget _dailyChart() {
-    return _chartBox("Daily Chart Placeholder");
-  }
-
-  Widget _weeklyChart() {
-    return _chartBox("Weekly Chart Placeholder");
-  }
-
-  Widget _monthlyChart() {
-    return _chartBox("Monthly Chart Placeholder");
-  }
-
-  Widget _chartBox(String label) {
-    return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(child: Text(label, style: TextStyle(fontSize: 16))),
-    );
-  }
-
-  Widget _budgetCard(double limit, double spent, double percent) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Monthly Budget: ₹$limit",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // IconButton(
-                  //   icon: const Icon(Icons.refresh, size: 20),
-                  //   onPressed: () async {
-                  //     try {
-                  //       AppUtils.showLoading("Recalculating...");
-                  //       context.read<BudgetBloc>().add(RecalculateBudget());
-
-                  //       // Wait for update
-                  //       await Future.delayed(const Duration(milliseconds: 300));
-
-                  //       // Reload budget
-                  //       if (context.mounted) {
-                  //         context.read<BudgetBloc>().add(LoadBudget());
-                  //       }
-
-                  //       AppUtils.showSuccess("Budget recalculated!");
-                  //     } catch (e) {
-                  //       AppUtils.showError(
-                  //         "Failed to recalculate: ${e.toString()}",
-                  //       );
-                  //     }
-                  //   },
-                  //   tooltip: "Recalculate Spent",
-                  // ),
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    onPressed: () =>
-                        _showEditBudgetDialog(context, currentLimit: limit),
-                    tooltip: "Edit Budget",
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          LinearProgressIndicator(
-            value: percent.clamp(0.0, 1.0),
-            backgroundColor: Colors.grey.shade300,
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            "₹${spent.toStringAsFixed(2)} spent • ${(percent * 100).toStringAsFixed(1)}% used",
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditBudgetDialog(BuildContext context, {double? currentLimit}) {
-    final TextEditingController budgetController = TextEditingController(
-      text: currentLimit != null && currentLimit > 0
-          ? currentLimit.toStringAsFixed(0)
-          : '',
+  void _showEditBudgetDialog(BuildContext context, double? existingLimit) {
+    final controller = TextEditingController(
+      text: existingLimit != null ? existingLimit.toStringAsFixed(0) : "",
     );
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          currentLimit != null && currentLimit > 0
-              ? "Edit Budget"
-              : "Set Monthly Budget",
-        ),
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text("Set Budget"),
         content: TextField(
-          controller: budgetController,
+          controller: controller,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: "Budget Amount (₹)",
-            hintText: "Enter monthly budget",
+            labelText: "Amount (₹)",
             border: OutlineInputBorder(),
-            prefixText: "₹ ",
           ),
-          autofocus: true,
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            onPressed: () async {
-              final amountText = budgetController.text.trim();
-              if (amountText.isEmpty) {
-                AppUtils.showError("Please enter a budget amount");
-                return;
-              }
-
-              final amount = double.tryParse(amountText);
+            onPressed: () {
+              final amount = double.tryParse(controller.text.trim());
               if (amount == null || amount <= 0) {
-                AppUtils.showError("Please enter a valid budget amount");
+                AppUtils.showError("Enter valid amount");
                 return;
               }
 
-              Navigator.pop(dialogContext);
-
-              try {
-                AppUtils.showLoading("Setting budget...");
-
-                // Calculate and set budget
-                context.read<BudgetBloc>().add(SetBudgetLimit(amount));
-
-                // Wait a moment for Firestore to update
-                await Future.delayed(const Duration(milliseconds: 500));
-
-                // Reload budget
-                if (context.mounted) {
-                  context.read<BudgetBloc>().add(LoadBudget());
-                }
-
-                AppUtils.showSuccess("Budget set successfully!");
-              } catch (e) {
-                final errorMessage = e.toString().toLowerCase();
-                String userMessage;
-
-                if (errorMessage.contains('permission-denied') ||
-                    errorMessage.contains('missing or insufficient')) {
-                  userMessage =
-                      "Permission denied. Please make sure you're logged in and try again.";
-                } else {
-                  userMessage = "Failed to set budget: ${e.toString()}";
-                  print("ERROR setting budget: $e");
-                }
-
-                AppUtils.showError(userMessage);
-              }
+              Navigator.pop(ctx);
+              context.read<BudgetBloc>().add(SetBudgetLimit(amount));
             },
             child: const Text("Save"),
           ),
