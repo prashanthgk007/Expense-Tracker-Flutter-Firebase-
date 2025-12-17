@@ -18,6 +18,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _autoValidate = false;
 
   @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -61,8 +67,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 children: [
                   const Text(
                     "Forgot your password?",
-                    style: TextStyle(
-                        fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -86,8 +91,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         if (value == null || value.isEmpty) {
                           return "Email is required";
                         }
-                        if (!RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-                            .hasMatch(value)) {
+                        if (!RegExp(
+                          r"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+                        ).hasMatch(value)) {
                           return "Enter a valid email";
                         }
                         return null;
@@ -96,8 +102,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         border: InputBorder.none,
                         labelText: "Email",
                         labelStyle: TextStyle(color: Colors.grey.shade600),
-                        prefixIcon:
-                            Icon(Icons.email, color: Colors.grey.shade400),
+                        prefixIcon: Icon(
+                          Icons.email,
+                          color: Colors.grey.shade400,
+                        ),
                       ),
                     ),
                   ),
@@ -111,16 +119,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           context.read<AuthBloc>().add(
-                                AuthResetPasswordEvent(
-                                    emailController.text.trim()),
-                              );
+                            AuthResetPasswordEvent(emailController.text.trim()),
+                          );
                         } else {
                           setState(() => _autoValidate = true);
                         }
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.all(0),
                         backgroundColor: Colors.transparent,
                         elevation: 0,
@@ -139,9 +147,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           child: Text(
                             "Send Reset Link",
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600),
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),

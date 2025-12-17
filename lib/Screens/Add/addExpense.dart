@@ -1,6 +1,7 @@
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_event.dart';
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_state.dart';
+import 'package:expense_tracker_app/Helper/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
@@ -23,20 +24,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ExpenseCategory selectedCategory = ExpenseCategory.food;
   DateTime selectedDate = DateTime.now();
 
-  String getCategoryDisplayName(ExpenseCategory category) {
-    switch (category) {
-      case ExpenseCategory.food:
-        return "Food";
-      case ExpenseCategory.travel:
-        return "Travel";
-      case ExpenseCategory.shopping:
-        return "Shopping";
-      case ExpenseCategory.bills:
-        return "Bills";
-      case ExpenseCategory.other:
-        return "Other";
-    }
-  }
+@override
+void dispose() {
+  titleController.dispose();
+  amountController.dispose();
+  notesController.dispose();
+  super.dispose();
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +111,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             .map(
                               (e) => DropdownMenuItem(
                                 value: e,
-                                child: Text(getCategoryDisplayName(e)),
+                                child: Text(Data.showCategoryDisplayName(e)),
                               ),
                             )
                             .toList(),
@@ -226,7 +222,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       id: '',
       title: titleController.text.trim(),
       amount: double.tryParse(amountController.text.trim()) ?? 0.0,
-      category: getCategoryDisplayName(selectedCategory),
+      category: Data.showCategoryDisplayName(selectedCategory),
       date: selectedDate,
       notes: notesController.text.trim(),
     );

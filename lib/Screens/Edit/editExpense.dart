@@ -1,4 +1,5 @@
 import 'package:expense_tracker_app/Bloc/Expense/Edit%20Expense/edit_expense_bloc.dart';
+import 'package:expense_tracker_app/Helper/data.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:expense_tracker_app/Helper/enum.dart';
@@ -30,40 +31,8 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
     notesController = TextEditingController(text: widget.expense.notes);
 
     // Convert category string to enum
-    selectedCategory = _getCategoryFromString(widget.expense.category);
+    selectedCategory = Data.getCategoryValueFromList(widget.expense.category);
     selectedDate = widget.expense.date;
-  }
-
-  ExpenseCategory _getCategoryFromString(String category) {
-    switch (category.toLowerCase()) {
-      case 'food':
-        return ExpenseCategory.food;
-      case 'travel':
-        return ExpenseCategory.travel;
-      case 'shopping':
-        return ExpenseCategory.shopping;
-      case 'bills':
-        return ExpenseCategory.bills;
-      case 'other':
-        return ExpenseCategory.other;
-      default:
-        return ExpenseCategory.other;
-    }
-  }
-
-  String getCategoryDisplayName(ExpenseCategory category) {
-    switch (category) {
-      case ExpenseCategory.food:
-        return "Food";
-      case ExpenseCategory.travel:
-        return "Travel";
-      case ExpenseCategory.shopping:
-        return "Shopping";
-      case ExpenseCategory.bills:
-        return "Bills";
-      case ExpenseCategory.other:
-        return "Other";
-    }
   }
 
   @override
@@ -142,7 +111,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                         items: ExpenseCategory.values
                             .map((e) => DropdownMenuItem(
                                   value: e,
-                                  child: Text(getCategoryDisplayName(e)),
+                                  child: Text(Data.showCategoryDisplayName(e)),
                                 ))
                             .toList(),
                         onChanged: (value) {
@@ -240,7 +209,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       id: widget.expense.id, // Keep the original ID
       title: titleController.text.trim(),
       amount: double.tryParse(amountController.text.trim()) ?? 0.0,
-      category: getCategoryDisplayName(selectedCategory),
+      category: Data.showCategoryDisplayName(selectedCategory),
       date: selectedDate,
       notes: notesController.text.trim(),
     );

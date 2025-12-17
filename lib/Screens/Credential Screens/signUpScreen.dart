@@ -22,14 +22,22 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _autoValidate = false;
 
   @override
+  void dispose() {
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    nameCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthLoading) {
-            AppUtils.showLoading("Creating account...");
-          }
+          // if (state is AuthLoading) {
+          //   AppUtils.showLoading("Creating account...");
+          // }
 
           if (state is AuthSuccess) {
             AppUtils.showSuccess("Signup Successful!");
@@ -43,8 +51,7 @@ class _SignupScreenState extends State<SignupScreen> {
         builder: (context, state) {
           return SafeArea(
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
               child: Form(
                 key: _formKey,
                 autovalidateMode: _autoValidate
@@ -94,8 +101,9 @@ class _SignupScreenState extends State<SignupScreen> {
                         if (value == null || value.isEmpty) {
                           return "Email is required";
                         }
-                        if (!RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-                            .hasMatch(value)) {
+                        if (!RegExp(
+                          r"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+                        ).hasMatch(value)) {
                           return "Enter a valid email";
                         }
                         return null;
@@ -132,12 +140,12 @@ class _SignupScreenState extends State<SignupScreen> {
                             onTap: () {
                               if (_formKey.currentState!.validate()) {
                                 context.read<AuthBloc>().add(
-                                      AuthSignupEvent(
-                                        emailCtrl.text.trim(),
-                                        passCtrl.text.trim(),
-                                        nameCtrl.text.trim(),
-                                      ),
-                                    );
+                                  AuthSignupEvent(
+                                    emailCtrl.text.trim(),
+                                    passCtrl.text.trim(),
+                                    nameCtrl.text.trim(),
+                                  ),
+                                );
                               } else {
                                 setState(() => _autoValidate = true);
                               }
@@ -150,7 +158,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.blue.shade600,
-                                    Colors.blue.shade400
+                                    Colors.blue.shade400,
                                   ],
                                 ),
                               ),
@@ -158,9 +166,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                 child: Text(
                                   "Sign Up",
                                   style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600),
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
@@ -172,8 +181,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: Text(
                         "Already have an account? Login",
                         style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade700),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                     ),
                   ],
@@ -226,4 +236,3 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 }
-

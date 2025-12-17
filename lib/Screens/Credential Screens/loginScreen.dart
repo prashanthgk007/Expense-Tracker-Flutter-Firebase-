@@ -22,6 +22,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _autoValidate = false;
 
   @override
+  void dispose() {
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -37,8 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context, state) {
           return SafeArea(
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
               child: Form(
                 key: _formKey,
                 autovalidateMode: _autoValidate
@@ -71,8 +77,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return "Email is required";
                         }
-                        if (!RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-                            .hasMatch(value)) {
+                        if (!RegExp(
+                          r"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+                        ).hasMatch(value)) {
                           return "Enter a valid email";
                         }
                         return null;
@@ -111,11 +118,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: () {
                               if (_formKey.currentState!.validate()) {
                                 context.read<AuthBloc>().add(
-                                      AuthLoginEvent(
-                                        emailCtrl.text.trim(),
-                                        passCtrl.text.trim(),
-                                      ),
-                                    );
+                                  AuthLoginEvent(
+                                    emailCtrl.text.trim(),
+                                    passCtrl.text.trim(),
+                                  ),
+                                );
                               } else {
                                 setState(() => _autoValidate = true);
                               }
@@ -128,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.blue.shade600,
-                                    Colors.blue.shade400
+                                    Colors.blue.shade400,
                                   ],
                                 ),
                               ),
@@ -136,9 +143,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Text(
                                   "Login",
                                   style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600),
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
@@ -147,8 +155,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 15),
 
                     TextButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.forgotPassword,
+                      ),
                       child: Text(
                         "Forgot Password?",
                         style: TextStyle(color: Colors.grey.shade700),
@@ -171,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             "Sign Up",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ],
@@ -224,4 +234,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

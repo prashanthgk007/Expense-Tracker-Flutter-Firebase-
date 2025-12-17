@@ -6,6 +6,7 @@ import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_state.dart';
+import 'package:expense_tracker_app/Helper/data.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:expense_tracker_app/Widgets/floatingActionButton.dart';
@@ -26,6 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: const Color(0xfff6f7fb),
 
       floatingActionButton: CommonFAB(
+          heroTag: 'dashboard_fab',
         onPressed: () => Navigator.pushNamed(context, AppRoutes.addExpense),
       ),
 
@@ -123,14 +125,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
               BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
                 builder: (context, state) {
                   if (state is ExpenseSummaryLoaded) {
-                    if (state.summary.categories.isEmpty) {
-                      return const Text("No data yet.");
-                    }
+                    final summary = state.summary;
+                    final total = summary.totalSpent;
 
-                    final total = state.summary.totalSpent;
+                    // 🔹 Create a normalized map (all categories with default 0)
+                    final Map<String, double> normalizedCategories = {
+                      for (var cat in Data.allCategories) cat: 0.0,
+                    };
+
+                    // 🔹 Override with actual data from Firestore
+                    summary.categories.forEach((key, value) {
+                      normalizedCategories[key] = value;
+                    });
 
                     return Column(
-                      children: state.summary.categories.entries.map((entry) {
+                      children: normalizedCategories.entries.map((entry) {
                         final percent = total > 0 ? entry.value / total : 0.0;
 
                         return _modernCategoryTile(
@@ -141,6 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }).toList(),
                     );
                   }
+
                   return const SizedBox();
                 },
               ),

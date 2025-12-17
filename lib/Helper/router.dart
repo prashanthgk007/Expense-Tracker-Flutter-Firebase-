@@ -14,17 +14,16 @@ import 'package:expense_tracker_app/Screens/Details/detailScreen.dart';
 import 'package:expense_tracker_app/Screens/Edit/editExpense.dart';
 import 'package:expense_tracker_app/Screens/List/expenseListScreen.dart';
 import 'package:expense_tracker_app/Screens/dashboardScreen.dart';
-import 'package:expense_tracker_app/Screens/forgotPasswordScreen.dart';
+import 'package:expense_tracker_app/Screens/Credential%20Screens/forgotPasswordScreen.dart';
 import 'package:expense_tracker_app/Screens/homeScreen.dart';
-import 'package:expense_tracker_app/Screens/loginScreen.dart';
+import 'package:expense_tracker_app/Screens/Credential%20Screens/loginScreen.dart';
 import 'package:expense_tracker_app/Screens/settingsScreen.dart';
-import 'package:expense_tracker_app/Screens/signUpScreen.dart';
+import 'package:expense_tracker_app/Screens/Credential%20Screens/signUpScreen.dart';
 import 'package:expense_tracker_app/Screens/splashScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AppRoutes {
-  // Route names (Remain Unchanged)
   static const String splash = '/';
   static const String login = '/login';
   static const String signup = '/signup';
@@ -38,70 +37,76 @@ class AppRoutes {
   static const String forgotPassword = '/forgot-password';
 
   // --------------------------------------------------------------------------
-  // 1. HELPER FOR INDEXEDSTACK (New Method)
+  // 1. HELPER FOR INDEXEDSTACK (New Method) (eg - bottom tab items)
   // --------------------------------------------------------------------------
-  /// This bypasses MaterialPageRoute creation, preventing unnecessary disposal/reloading.
   static Widget getScreenWidget(String routeName) {
     switch (routeName) {
       case dashboard:
-        // BlocProviders for the DashboardScreen
         return MultiBlocProvider(
           providers: [
-            // Ensure BudgetBloc is initialized on first load
-            BlocProvider(create: (_) => BudgetBloc()..add(LoadBudget())), 
-            // Ensure ExpenseSummaryBloc is initialized on first load
+            BlocProvider(create: (_) => BudgetBloc()..add(LoadBudget())),
             BlocProvider(
-              create: (context) => ExpenseSummaryBloc()..add(LoadExpenseSummary()),
+              create: (context) =>
+                  ExpenseSummaryBloc()..add(LoadExpenseSummary()),
             ),
           ],
           child: const DashboardScreen(),
         );
 
       case listExpense:
-        // BlocProviders for the ExpenseListScreen
         return MultiBlocProvider(
           providers: [
             BlocProvider(create: (context) => ExpenseBloc()),
             BlocProvider(create: (context) => DeleteExpenseBloc()),
-            // The ExpenseSummaryBloc is likely used here too
             BlocProvider(
-              create: (context) => ExpenseSummaryBloc()..add(LoadExpenseSummary()),
+              create: (context) =>
+                  ExpenseSummaryBloc()..add(LoadExpenseSummary()),
             ),
           ],
           child: const ExpenseListScreen(),
         );
 
       default:
-        // Fallback for screens not intended for IndexedStack
         return const Scaffold(body: Center(child: Text("Invalid Tab Screen")));
     }
   }
 
-
   // --------------------------------------------------------------------------
   // 2. ROUTE GENERATOR (Modified)
   // --------------------------------------------------------------------------
-  /// Generates the MaterialPageRoute for screens accessed via navigation methods (like pushNamed).
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    // These routes are used for full-screen navigation (push/pop)
     switch (settings.name) {
       case splash:
-        return MaterialPageRoute(builder: (_) => const SplashScreen());
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => AuthBloc(),
+            child: const SplashScreen(),
+          ),
+        );
 
       case home:
-        // HOME screen is the container for the IndexedStack.
-        return MaterialPageRoute(builder: (_) => const HomeScreen()); 
-        
+        return MaterialPageRoute(builder: (_) => const HomeScreen());
+
       case login:
-        return MaterialPageRoute(builder: (_) => LoginScreen());
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => AuthBloc(),
+            child: LoginScreen(),
+          ),
+        );
 
       case signup:
-        return MaterialPageRoute(builder: (_) => SignupScreen());
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => AuthBloc(),
+            child: SignupScreen(),
+          ),
+        );
       case dashboard:
       case listExpense:
-        // If someone pushes directly to these routes, they get the screen with providers
-        return MaterialPageRoute(builder: (_) => getScreenWidget(settings.name!));
-
+        return MaterialPageRoute(
+          builder: (_) => getScreenWidget(settings.name!),
+        );
 
       case addExpense:
         return MaterialPageRoute(
@@ -133,8 +138,11 @@ class AppRoutes {
 
       case setting:
         return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-            create: (context) => UserBloc(),
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider<UserBloc>(create: (_) => UserBloc()),
+              BlocProvider(create: (_) => AuthBloc()),
+            ],
             child: const SettingsScreen(),
           ),
         );

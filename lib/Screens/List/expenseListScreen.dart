@@ -30,6 +30,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: CommonFAB(
+          heroTag: 'dashboard_fab',
         onPressed: () => Navigator.pushNamed(context, AppRoutes.addExpense),
       ),
 
