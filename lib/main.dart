@@ -8,58 +8,40 @@ import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-/// 🔔 Local Notifications Plugin (GLOBAL)
+/// 1. 🔔 Top-Level Background Handler
+/// Must be outside any class and marked with @pragma('vm:entry-point')
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint("Handling a background message: ${message.messageId}");
+}
+
+/// 🔔 Global Notifications Plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-/// 🔔 Android Notification Channel (GLOBAL)
+/// 🔔 Android Notification Channel
 const AndroidNotificationChannel highImportanceChannel =
     AndroidNotificationChannel(
-  'high_importance_channel',
-  'High Importance Notifications',
-  description: 'Used for important notifications',
-  importance: Importance.max,
-);
-
-/// 🔥 Background Notification Handler
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-}
+      'high_importance_channel',
+      'High Importance Notifications',
+      description: 'This channel is used for important notifications.',
+      importance: Importance.max,
+    );
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// 🔥 Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  /// 🔥 Register Background Handler
-  FirebaseMessaging.onBackgroundMessage(
-    firebaseMessagingBackgroundHandler,
-  );
+  // 2. Register Background Handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  /// 🔔 Initialize Local Notifications
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  const InitializationSettings initializationSettings =
-      InitializationSettings(
-    android: initializationSettingsAndroid,
-    iOS: DarwinInitializationSettings(),
-  );
-
-  await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
-  );
-
-  /// 🔔 Create Android Notification Channel (REQUIRED)
+  // 3. Setup Android Channel (Mandatory for Android 8+)
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
+        AndroidFlutterLocalNotificationsPlugin
+      >()
       ?.createNotificationChannel(highImportanceChannel);
 
   runApp(const MyApp());
@@ -67,7 +49,6 @@ void main() async {
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
-
   @override
   State<MyApp> createState() => _MyAppState();
 }
@@ -79,55 +60,89 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     setupPushNotifications();
+    setupInteractions();
   }
 
-  /// 🔔 PUSH NOTIFICATION SETUP
+  /// 4. 🔔 Full Notification Setup
   void setupPushNotifications() async {
-    /// iOS + Android 13 permission
+    // A. Request Permissions (iOS & Android 13+)
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    /// Get FCM Token
+    // B. Initialize Local Notifications Plugin (CRITICAL)
+    const initializationSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (details) {
+        // Handle notification click while app is open
+        debugPrint("Notification tapped: ${details.payload}");
+      },
+    );
+
+    // C. Get & Save FCM Token
     final token = await FirebaseMessaging.instance.getToken();
     debugPrint("🔥 FCM Token: $token");
-
-    /// Save Token to Firestore
     if (token != null) {
-      final uid = authService.currentUserId;
-      if (uid != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .set(
-          {'fcmToken': token},
-          SetOptions(merge: true),
-        );
-      }
+      _saveTokenToFirestore(token);
     }
 
-    /// 🔔 FOREGROUND NOTIFICATIONS (Android + iOS)
+    // D. Foreground Listener
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final notification = message.notification;
-      if (notification == null) return;
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
 
-      flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            importance: Importance.max,
-            priority: Priority.high,
+      if (notification != null && android != null) {
+        flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              highImportanceChannel.id,
+              highImportanceChannel.name,
+              channelDescription: highImportanceChannel.description,
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
+            iOS: const DarwinNotificationDetails(),
           ),
-          iOS: DarwinNotificationDetails(),
-        ),
-      );
+          payload: message.data.toString(),
+        );
+      }
     });
+  }
+
+  /// 5. 🖱️ Handle Clicks (Background/Terminated States)
+  void setupInteractions() async {
+    // Terminated State: App opened from a notification
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance
+        .getInitialMessage();
+    if (initialMessage != null) {
+      debugPrint("App opened from Terminated state via notification");
+    }
+
+    // Background State: App resumed from a notification
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint("App resumed from Background state via notification");
+    });
+  }
+
+  void _saveTokenToFirestore(String token) async {
+    final uid = authService.currentUserId;
+    if (uid != null) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'fcmToken': token,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
   }
 
   @override
@@ -137,20 +152,9 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,
-
-      /// 🌟 Global Theme
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          centerTitle: true,
-        ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          background: Colors.white,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
     );
   }

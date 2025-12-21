@@ -68,21 +68,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   }
 
-                  // ✅ Budget Loaded
-                  if (state is BudgetLoaded) {
-                    if (state.budget != null) {
-                      final limit = AppUtils.toDouble(state.budget!["limit"]);
-                      final spent = AppUtils.toDouble(
-                        state.budget!["totalSpent"],
-                      );
-                      final double percent = limit > 0 ? (spent / limit) : 0.0;
+                  if (state is BudgetLoaded && state.budget != null) {
+                    final limit = AppUtils.toDouble(state.budget!["limit"]);
+                    final spent = AppUtils.toDouble(
+                      state.budget!["totalSpent"],
+                    );
+                    final percent = limit > 0 ? (spent / limit) : 0.0;
 
-                      return _modernBudgetCard(limit, spent, percent);
-                    }
-
-                    // ❗ No budget set
-                    return _noBudgetBox(context);
+                    return BlocBuilder<ExpenseSummaryBloc, ExpenseSummaryState>(
+                      builder: (context, summaryState) {
+                        if (summaryState is ExpenseSummaryLoaded) {
+                          return _modernBudgetCard(
+                            limit,
+                            AppUtils.toDouble(summaryState.summary.totalSpent),
+                            percent,
+                          );
+                        }
+                        return CircularProgressIndicator();
+                      },
+                    );
                   }
+
+                  // ❗ No budget set
+                  return _noBudgetBox(context);
 
                   // ❌ Error or initial fallback
                   return const SizedBox.shrink();

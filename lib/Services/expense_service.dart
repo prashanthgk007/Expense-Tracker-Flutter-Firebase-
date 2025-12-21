@@ -106,21 +106,21 @@ class ExpenseService {
     print("DEBUG: Budget updated using cloud function. Limit: $limit");
   }
 
-  Future<Map<String, dynamic>> recalculateTotalSpent() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("User not logged in");
+  // Future<Map<String, dynamic>> recalculateTotalSpent() async {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) throw Exception("User not logged in");
 
-    final callable = FirebaseFunctions.instance.httpsCallable(
-      'recalculateBudget',
-    );
-    final result = await callable.call();
+  //   final callable = FirebaseFunctions.instance.httpsCallable(
+  //     'recalculateBudget',
+  //   );
+  //   final result = await callable.call();
 
-    if (result.data is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(result.data);
-    }
+  //   if (result.data is Map<String, dynamic>) {
+  //     return Map<String, dynamic>.from(result.data);
+  //   }
 
-    throw Exception("Invalid response from server");
-  }
+  //   throw Exception("Invalid response from server");
+  // }
 
   //Expense Summary / Category
 

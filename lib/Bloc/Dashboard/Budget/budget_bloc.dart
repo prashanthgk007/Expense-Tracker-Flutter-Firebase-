@@ -18,7 +18,7 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
 
     // Actions
     on<SetBudgetLimit>(_onSetLimit);
-    on<RecalculateBudget>(_onRecalculate);
+    // on<RecalculateBudget>(_onRecalculate);
   }
 
   // ---------------- LOAD STREAM ----------------
@@ -61,16 +61,16 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     }
   }
 
-  Future<void> _onRecalculate(
-      RecalculateBudget event, Emitter<BudgetState> emit) async {
-    emit(BudgetLoading());
+  // Future<void> _onRecalculate(
+  //     RecalculateBudget event, Emitter<BudgetState> emit) async {
+  //   emit(BudgetLoading());
 
-    try {
-      await _service.recalculateTotalSpent();
-    } catch (e) {
-      emit(BudgetError(e.toString()));
-    }
-  }
+  //   try {
+  //     await _service.recalculateTotalSpent();
+  //   } catch (e) {
+  //     emit(BudgetError(e.toString()));
+  //   }
+  // }
 
   @override
   Future<void> close() {

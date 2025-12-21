@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
-                      "Welcome Back 👋",
+                      "Welcome Back",
                       style: TextStyle(
                         color: AppColors.black,
                         fontSize: 32,

@@ -48,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(color: AppColors.black),
         ),
         backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.black),
       ),

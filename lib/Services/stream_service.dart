@@ -7,7 +7,7 @@ class ExpenseStreamService {
 
   /// Stream expenses with polling
   Stream<List<ExpenseModel>> streamExpenses({
-    Duration interval = const Duration(milliseconds: 15),
+    Duration interval = const Duration(milliseconds: 1),
   }) async* {
     while (true) {
       try {
@@ -36,7 +36,7 @@ class ExpenseStreamService {
 
   /// Stream Summary
   Stream<ExpenseSummary> streamExpenseSummary({
-    Duration interval = const Duration(milliseconds: 15),
+    Duration interval = const Duration(milliseconds: 1),
   }) async* {
     while (true) {
       try {

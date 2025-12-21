@@ -1,3 +1,4 @@
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:flutter/material.dart';
 
@@ -36,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+                backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
         title: Text(
           currentTitle,
           style: const TextStyle(

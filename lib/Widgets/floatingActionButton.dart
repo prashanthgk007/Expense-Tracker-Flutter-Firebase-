@@ -1,3 +1,4 @@
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:flutter/material.dart';
 
 class CommonFAB extends StatelessWidget {
@@ -17,10 +18,10 @@ class CommonFAB extends StatelessWidget {
     return FloatingActionButton(
       onPressed: onPressed,
       heroTag: heroTag,
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.primaryBlue,
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Icon(icon, color: Colors.white, size: 26),
+      child: Icon(icon, color: AppColors.white, size: 26),
     );
   }
 }

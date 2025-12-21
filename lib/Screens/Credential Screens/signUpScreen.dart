@@ -61,7 +61,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
-                      "Create Account ✨",
+                      "Create Account",
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 30,

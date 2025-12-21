@@ -91,7 +91,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               final expense = expenses[index];
 
               return Container(
-                margin: const EdgeInsets.only(bottom: 14),
+                margin: const EdgeInsets.only(top: 14,bottom: 14),
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(18),
@@ -216,6 +216,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                                     ),
                                     ElevatedButton(
                                       style: ElevatedButton.styleFrom(
+                                        foregroundColor: AppColors.white,
                                         backgroundColor: AppColors.error,
                                       ),
                                       onPressed: () {

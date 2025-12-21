@@ -3,7 +3,7 @@ import { setGlobalOptions } from "firebase-functions";
 import { HttpsError, onRequest } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
-import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onCall } from "firebase-functions/v2/https";
 
 admin.initializeApp();
@@ -25,47 +25,55 @@ export const checkHealth = onRequest((req, res) => {
   res.send("Function is online");
 });
 
-export const sendNotification = onRequest(async (req, res) => {
-  const { fcmToken, title, body } = req.body;
-
-  const message = {
-    notification: {
-      title: title,
-      body: body,
-    },
-    token: fcmToken,
-  };
-
-  try {
-    const response = await admin.messaging().send(message);
-    res.status(200).send({ success: true, response });
-  } catch (error) {
-    res.status(500).send({ success: false, error });
-  }
-});
-
-export const notifyOnExpenseAdded = onDocumentCreated(
+export const notifyOnExpenseChange = onDocumentWritten(
   "users/{uid}/expenses/{expenseId}",
   async (event) => {
-    if (!event.data) {
-      console.log("No data found in event");
-      return;
+    const { uid } = event.params;
+
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    // Determine action type
+    let title = "";
+    let body = "";
+
+    if (!beforeData && afterData) {
+      // ➕ Added
+      title = "Expense Added";
+      body = `₹${afterData.amount} - ${afterData.title}`;
+    }
+    else if (beforeData && afterData) {
+      // ✏️ Updated
+      title = "Expense Updated";
+      body = `₹${afterData.amount} - ${afterData.title}`;
+    }
+    else if (beforeData && !afterData) {
+      // ❌ Deleted
+      title = "Expense Deleted";
+      body = `₹${beforeData.amount} - ${beforeData.title}`;
     }
 
-    const data = event.data?.data();
-    const uid = event.params.uid;
-
+    // Fetch user's FCM token
     const userDoc = await admin.firestore().collection("users").doc(uid).get();
     const fcmToken = userDoc.get("fcmToken");
 
+    if (!fcmToken || !title) {
+      console.log("No token or invalid event");
+      return;
+    }
+
+    // Send notification
     await admin.messaging().send({
-      notification: {
-        title: "New Expense Added",
-        body: `₹${data.amount} - ${data.title}`,
-      },
       token: fcmToken,
+      notification: { title, body },
+      data: {
+        type: "expense",
+        action: title.toLowerCase().replace(" ", "_"),
+      },
     });
-  });
+  }
+);
+
 
 //User Functions
 
@@ -370,103 +378,103 @@ export const updateBudget = onCall(async (request) => {
 });
 
 
-export const recalculateBudget = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new Error("Unauthorized");
+// export const recalculateBudget = onCall(async (request) => {
+//   const uid = request.auth?.uid;
+//   if (!uid) throw new Error("Unauthorized");
 
-  const db = admin.firestore();
+//   const db = admin.firestore();
 
-  try {
-    // 1⃣ Get all expenses
-    const expensesSnapshot = await db
-      .collection("users")
-      .doc(uid)
-      .collection("expenses")
-      .get();
+//   try {
+//     // 1⃣ Get all expenses
+//     const expensesSnapshot = await db
+//       .collection("users")
+//       .doc(uid)
+//       .collection("expenses")
+//       .get();
 
-    let totalSpent = 0;
+//     let totalSpent = 0;
 
-    expensesSnapshot.forEach((doc) => {
-      const data = doc.data();
-      totalSpent += Number(data.amount || 0);
-    });
+//     expensesSnapshot.forEach((doc) => {
+//       const data = doc.data();
+//       totalSpent += Number(data.amount || 0);
+//     });
 
-    // 2⃣ Get existing budget to preserve limit
-    const budgetRef = db
-      .collection("users")
-      .doc(uid)
-      .collection("budget")
-      .doc("budget");
+//     // 2⃣ Get existing budget to preserve limit
+//     const budgetRef = db
+//       .collection("users")
+//       .doc(uid)
+//       .collection("budget")
+//       .doc("budget");
 
-    const budgetDoc = await budgetRef.get();
-    const existingLimit = budgetDoc.exists
-      ? Number(budgetDoc.data()?.limit ?? 0)
-      : 0;
+//     const budgetDoc = await budgetRef.get();
+//     const existingLimit = budgetDoc.exists
+//       ? Number(budgetDoc.data()?.limit ?? 0)
+//       : 0;
 
-    // 3⃣ Update total spent safely
-    await budgetRef.set(
-      {
-        limit: existingLimit,
-        totalSpent,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+//     // 3⃣ Update total spent safely
+//     await budgetRef.set(
+//       {
+//         limit: existingLimit,
+//         totalSpent,
+//         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+//       },
+//       { merge: true }
+//     );
 
-    return {
-      success: true,
-      totalSpent,
-      limit: existingLimit,
-    };
-  } catch (error) {
-    console.error("Error recalculating budget:", error);
-    throw new Error("Failed to recalculate budget");
-  }
-});
+//     return {
+//       success: true,
+//       totalSpent,
+//       limit: existingLimit,
+//     };
+//   } catch (error) {
+//     console.error("Error recalculating budget:", error);
+//     throw new Error("Failed to recalculate budget");
+//   }
+// });
 
 
-export const updateBudgetsOnExpenseChange = onDocumentWritten(
-  "users/{userId}/expenses/{expenseId}",
-  async (event) => {
-    const { userId } = event.params;
+// export const updateBudgetsOnExpenseChange = onDocumentWritten(
+//   "users/{userId}/expenses/{expenseId}",
+//   async (event) => {
+//     const { userId } = event.params;
 
-    const db = admin.firestore();
+//     const db = admin.firestore();
 
-    const expensesRef = db.collection(`users/${userId}/expenses`);
-    const budgetDocRef = db.doc(`users/${userId}/budget/budget`);
+//     const expensesRef = db.collection(`users/${userId}/expenses`);
+//     const budgetDocRef = db.doc(`users/${userId}/budget/budget`);
 
-    // Fetch all expenses
-    const expensesSnapshot = await expensesRef.get();
+//     // Fetch all expenses
+//     const expensesSnapshot = await expensesRef.get();
 
-    // Calculate total spent from all expenses
-    let totalSpent = 0;
-    expensesSnapshot.forEach((expenseDoc) => {
-      const expense = expenseDoc.data();
-      totalSpent += expense.amount || 0;
-    });
+//     // Calculate total spent from all expenses
+//     let totalSpent = 0;
+//     expensesSnapshot.forEach((expenseDoc) => {
+//       const expense = expenseDoc.data();
+//       totalSpent += expense.amount || 0;
+//     });
 
-    // Check if budget document exists
-    const budgetDoc = await budgetDocRef.get();
+//     // Check if budget document exists
+//     const budgetDoc = await budgetDocRef.get();
 
-    if (budgetDoc.exists) {
-      // Update existing budget with new totalSpent
-      await budgetDocRef.update({
-        totalSpent: totalSpent,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      console.log(`Budget updated for user ${userId}: Total spent = ${totalSpent}`);
-    } else {
-      // Budget doesn't exist yet - create it with totalSpent, limit will be set by user later
-      await budgetDocRef.set({
-        limit: 0,
-        totalSpent: totalSpent,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      console.log(`Budget created for user ${userId}: Total spent = ${totalSpent}`);
-    }
-  }
-);
+//     if (budgetDoc.exists) {
+//       // Update existing budget with new totalSpent
+//       await budgetDocRef.update({
+//         totalSpent: totalSpent,
+//         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+//       });
+//       console.log(`Budget updated for user ${userId}: Total spent = ${totalSpent}`);
+//     } else {
+//       // Budget doesn't exist yet - create it with totalSpent, limit will be set by user later
+//       await budgetDocRef.set({
+//         limit: 0,
+//         totalSpent: totalSpent,
+//         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+//       });
+//       console.log(`Budget created for user ${userId}: Total spent = ${totalSpent}`);
+//     }
+//   }
+// );
 
 
 export const setBudgetLimit = onCall(async (request) => {

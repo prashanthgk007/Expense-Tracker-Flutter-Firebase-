@@ -6,7 +6,6 @@ import 'package:expense_tracker_app/Helper/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
-import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_state.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:expense_tracker_app/Helper/enum.dart';
 
@@ -39,6 +38,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text("Add Expense"),
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
       ),
       body: BlocConsumer<AddExpenseBloc, AddExpenseState>(
         listener: (context, state) {
@@ -65,7 +66,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Title", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Title",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: titleController,
@@ -77,7 +81,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                     const SizedBox(height: 20),
 
-                    const Text("Amount", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Amount",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: amountController,
@@ -90,7 +97,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                     const SizedBox(height: 20),
 
-                    const Text("Category", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Category",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -120,7 +130,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                     const SizedBox(height: 20),
 
-                    const Text("Date", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Date",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     InkWell(
                       onTap: pickDate,
@@ -163,9 +176,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: state is AddExpenseLoading ? null : saveExpense,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryBlue,
+                          foregroundColor: AppColors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: state is AddExpenseLoading
+                            ? null
+                            : saveExpense,
                         child: const Text(
-                          "Save Expense",
+                          "Save",
                           style: TextStyle(fontSize: 16),
                         ),
                       ),
@@ -201,9 +221,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   void saveExpense() {
     if (titleController.text.isEmpty || amountController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
       return;
     }
 

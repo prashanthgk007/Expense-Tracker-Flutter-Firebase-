@@ -51,9 +51,9 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
-        title: const Text("Edit Expense"),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
+        title:  Text("Edit Expense"),
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
       ),
       body: BlocConsumer<EditExpenseBloc, EditExpenseState>(
         listener: (context, state) {
@@ -215,7 +215,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                             ? null
                             : updateExpense,
                         child: const Text(
-                          "Update Expense",
+                          "Update",
                           style: TextStyle(fontSize: 16),
                         ),
                       ),
