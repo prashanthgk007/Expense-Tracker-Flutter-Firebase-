@@ -1,4 +1,5 @@
 import 'package:expense_tracker_app/Bloc/Expense/Edit%20Expense/edit_expense_bloc.dart';
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/data.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
@@ -27,7 +28,9 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   void initState() {
     super.initState();
     titleController = TextEditingController(text: widget.expense.title);
-    amountController = TextEditingController(text: widget.expense.amount.toString());
+    amountController = TextEditingController(
+      text: widget.expense.amount.toString(),
+    );
     notesController = TextEditingController(text: widget.expense.notes);
 
     // Convert category string to enum
@@ -46,7 +49,12 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Expense")),
+      backgroundColor: AppColors.white,
+      appBar: AppBar(
+        title: const Text("Edit Expense"),
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: AppColors.white,
+      ),
       body: BlocConsumer<EditExpenseBloc, EditExpenseState>(
         listener: (context, state) {
           if (state is EditExpenseLoading) {
@@ -55,7 +63,6 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
           if (state is EditExpenseSuccess) {
             AppUtils.showSuccess("Expense updated");
             Navigator.pop(context, true);
-
           } else if (state is EditExpenseFailure) {
             AppUtils.showError(state.message);
           }
@@ -69,20 +76,31 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // TITLE
-                    const Text("Title", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Title",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.black,
+                      ),
+                    ),
+
                     const SizedBox(height: 6),
                     TextField(
                       controller: titleController,
                       decoration: const InputDecoration(
                         hintText: "Enter expense title",
                         border: OutlineInputBorder(),
+                        hintStyle: TextStyle(color: AppColors.grey),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
                     // AMOUNT
-                    const Text("Amount", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Amount",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: amountController,
@@ -90,34 +108,44 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                       decoration: const InputDecoration(
                         hintText: "₹ Enter amount",
                         border: OutlineInputBorder(),
+                        hintStyle: TextStyle(color: AppColors.grey),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
                     // CATEGORY DROPDOWN
-                    const Text("Category", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Category",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
+                        border: Border.all(color: AppColors.grey),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButton<ExpenseCategory>(
                         isExpanded: true,
                         value: selectedCategory,
                         underline: const SizedBox(),
+                        dropdownColor: AppColors.white,
                         items: ExpenseCategory.values
-                            .map((e) => DropdownMenuItem(
-                                  value: e,
-                                  child: Text(Data.showCategoryDisplayName(e)),
-                                ))
+                            .map(
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(
+                                  Data.showCategoryDisplayName(e),
+                                  style: const TextStyle(
+                                    color: AppColors.black,
+                                  ),
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (value) {
-                          setState(() {
-                            selectedCategory = value!;
-                          });
+                          setState(() => selectedCategory = value!);
                         },
                       ),
                     ),
@@ -125,21 +153,30 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                     const SizedBox(height: 20),
 
                     // DATE PICKER
-                    const Text("Date", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Date",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     InkWell(
                       onTap: pickDate,
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
+                          border: Border.all(color: AppColors.grey),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"),
-                            const Icon(Icons.calendar_today),
+                            Text(
+                              "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                              style: const TextStyle(color: AppColors.black),
+                            ),
+                            const Icon(
+                              Icons.calendar_today,
+                              color: AppColors.grey,
+                            ),
                           ],
                         ),
                       ),
@@ -148,7 +185,10 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                     const SizedBox(height: 20),
 
                     // NOTES
-                    const Text("Notes (optional)", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Notes (optional)",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: notesController,
@@ -156,6 +196,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                       decoration: const InputDecoration(
                         hintText: "Add extra details...",
                         border: OutlineInputBorder(),
+                        hintStyle: TextStyle(color: AppColors.grey),
                       ),
                     ),
 
@@ -165,8 +206,18 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: state is EditExpenseLoading ? null : updateExpense,
-                        child: const Text("Update Expense", style: TextStyle(fontSize: 16)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryBlue,
+                          foregroundColor: AppColors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: state is EditExpenseLoading
+                            ? null
+                            : updateExpense,
+                        child: const Text(
+                          "Update Expense",
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
@@ -175,8 +226,12 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
 
               if (state is EditExpenseLoading)
                 Container(
-                  color: Colors.black26,
-                  child: const Center(child: CircularProgressIndicator()),
+                  color: AppColors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
                 ),
             ],
           );
@@ -200,8 +255,13 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
 
   void updateExpense() {
     if (titleController.text.isEmpty || amountController.text.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Please fill all fields"),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+
       return;
     }
 

@@ -6,6 +6,7 @@ import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_event.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/budget_state.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Dashboard/Budget/Category,%20Chart%20&%20Summary/expense_summary_state.dart';
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/data.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
@@ -24,10 +25,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff6f7fb),
+      backgroundColor: AppColors.scaffoldBg,
 
       floatingActionButton: CommonFAB(
-          heroTag: 'dashboard_fab',
+        heroTag: 'dashboard_fab',
         onPressed: () => Navigator.pushNamed(context, AppRoutes.addExpense),
       ),
 
@@ -70,10 +71,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // ✅ Budget Loaded
                   if (state is BudgetLoaded) {
                     if (state.budget != null) {
-                      final limit = (state.budget!["limit"] ?? 0).toDouble();
-                      final spent = (state.budget!["totalSpent"] ?? 0)
-                          .toDouble();
-                      final percent = limit > 0 ? spent / limit : 0;
+                      final limit = AppUtils.toDouble(state.budget!["limit"]);
+                      final spent = AppUtils.toDouble(
+                        state.budget!["totalSpent"],
+                      );
+                      final double percent = limit > 0 ? (spent / limit) : 0.0;
 
                       return _modernBudgetCard(limit, spent, percent);
                     }
@@ -99,7 +101,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         _summaryCard(
                           title: "Total Spent",
-                          amount: "₹${state.summary.totalSpent}",
+                          amount:
+                              "₹${AppUtils.toDouble(state.summary.totalSpent)}",
+
                           icon: Icons.account_balance_wallet_outlined,
                           color: Colors.blue,
                         ),
@@ -135,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // 🔹 Override with actual data from Firestore
                     summary.categories.forEach((key, value) {
-                      normalizedCategories[key] = value;
+                      normalizedCategories[key] = AppUtils.toDouble(value);
                     });
 
                     return Column(
@@ -185,12 +189,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(18),
           boxShadow: const [
             BoxShadow(
               blurRadius: 12,
-              color: Colors.black12,
+              color: AppColors.shadow,
               offset: Offset(1, 4),
             ),
           ],
@@ -202,11 +206,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 10),
             Text(
               amount,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.black,
+              ),
             ),
             Text(
               title,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: const TextStyle(fontSize: 14, color: AppColors.grey600),
             ),
           ],
         ),
@@ -219,12 +227,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
-          BoxShadow(blurRadius: 8, offset: Offset(1, 2), color: Colors.black12),
+          BoxShadow(
+            blurRadius: 8,
+            offset: Offset(1, 2),
+            color: AppColors.shadow,
+          ),
         ],
       ),
+
       child: Row(
         children: [
           Expanded(
@@ -240,8 +253,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: LinearProgressIndicator(
                 value: percent,
                 minHeight: 8,
-                backgroundColor: Colors.grey.shade300,
-                valueColor: AlwaysStoppedAnimation(Colors.blueAccent.shade400),
+                backgroundColor: AppColors.grey300,
+                valueColor: const AlwaysStoppedAnimation(
+                  AppColors.primaryAccent,
+                ),
               ),
             ),
           ),
@@ -258,14 +273,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Color endColor;
 
     if (percent < 0.5) {
-      startColor = Colors.green.shade600.withOpacity(0.85);
-      endColor = Colors.green.shade400.withOpacity(0.65);
+      startColor = AppColors.success.withOpacity(0.85);
+      endColor = AppColors.success.withOpacity(0.65);
     } else if (percent < 0.8) {
-      startColor = Colors.orange.shade600.withOpacity(0.85);
-      endColor = Colors.orange.shade400.withOpacity(0.65);
+      startColor = AppColors.warning.withOpacity(0.85);
+      endColor = AppColors.warning.withOpacity(0.65);
     } else {
-      startColor = Colors.red.shade700.withOpacity(0.85);
-      endColor = Colors.red.shade400.withOpacity(0.65);
+      startColor = AppColors.error.withOpacity(0.85);
+      endColor = AppColors.error.withOpacity(0.65);
     }
 
     return Container(
@@ -296,14 +311,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const Text(
                 "Budget Overview",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontSize: 19,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               InkWell(
                 onTap: () => _showEditBudgetDialog(context, limit),
-                child: const Icon(Icons.edit, color: Colors.white),
+                child: Icon(Icons.edit, color: AppColors.white),
               ),
             ],
           ),
@@ -316,8 +331,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: LinearProgressIndicator(
               value: percent.clamp(0.0, 1.0),
               minHeight: 10,
-              backgroundColor: Colors.white.withOpacity(0.25),
-              valueColor: const AlwaysStoppedAnimation(Colors.white),
+              backgroundColor: AppColors.white.withOpacity(0.25),
+              valueColor: const AlwaysStoppedAnimation(AppColors.white),
             ),
           ),
 
@@ -349,23 +364,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _circleActionButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(right: 15),
-        padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.black12,
-        ),
-        child: Icon(icon, color: Colors.black),
-      ),
-    );
-  }
+  // Widget _circleActionButton({
+  //   required IconData icon,
+  //   required VoidCallback onTap,
+  // }) {
+  //   return GestureDetector(
+  //     onTap: onTap,
+  //     child: Container(
+  //       margin: const EdgeInsets.only(right: 15),
+  //       padding: const EdgeInsets.all(8),
+  //       decoration: const BoxDecoration(
+  //         shape: BoxShape.circle,
+  //         color: Colors.black12,
+  //       ),
+  //       child: Icon(icon, color: Colors.black),
+  //     ),
+  //   );
+  // }
 
   Widget _noBudgetBox(BuildContext context) {
     return GestureDetector(
@@ -373,10 +388,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: AppColors.grey100,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: AppColors.grey300),
         ),
+
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -416,6 +432,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () {
               final amount = double.tryParse(controller.text.trim());
               if (amount == null || amount <= 0) {

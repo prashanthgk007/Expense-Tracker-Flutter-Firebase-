@@ -1,6 +1,7 @@
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_event.dart';
 import 'package:expense_tracker_app/Bloc/Expense/Add%20Expense/add_expense_state.dart';
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,29 +25,35 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ExpenseCategory selectedCategory = ExpenseCategory.food;
   DateTime selectedDate = DateTime.now();
 
-@override
-void dispose() {
-  titleController.dispose();
-  amountController.dispose();
-  notesController.dispose();
-  super.dispose();
-}
-
-
+  @override
+  void dispose() {
+    titleController.dispose();
+    amountController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Expense")),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text("Add Expense"),
+      ),
       body: BlocConsumer<AddExpenseBloc, AddExpenseState>(
         listener: (context, state) {
           if (state is AddExpenseLoading) {
             AppUtils.showLoading("Adding");
+          } else {
+            AppUtils.dismiss();
           }
+
           if (state is AddExpenseSuccess) {
             AppUtils.showSuccess("Expense added");
             Navigator.pop(context, true);
-          } else if (state is AddExpenseFailure) {
+          }
+
+          if (state is AddExpenseFailure) {
             AppUtils.showError(state.message);
           }
         },
@@ -58,11 +65,7 @@ void dispose() {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // TITLE
-                    const Text(
-                      "Title",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text("Title", style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     TextField(
                       controller: titleController,
@@ -74,11 +77,7 @@ void dispose() {
 
                     const SizedBox(height: 20),
 
-                    // AMOUNT
-                    const Text(
-                      "Amount",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text("Amount", style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     TextField(
                       controller: amountController,
@@ -91,16 +90,12 @@ void dispose() {
 
                     const SizedBox(height: 20),
 
-                    // CATEGORY DROPDOWN
-                    const Text(
-                      "Category",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text("Category", style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
+                        border: Border.all(color: AppColors.border),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButton<ExpenseCategory>(
@@ -116,27 +111,23 @@ void dispose() {
                             )
                             .toList(),
                         onChanged: (value) {
-                          setState(() {
-                            selectedCategory = value!;
-                          });
+                          if (value != null) {
+                            setState(() => selectedCategory = value);
+                          }
                         },
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // DATE PICKER
-                    const Text(
-                      "Date",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text("Date", style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     InkWell(
                       onTap: pickDate,
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
+                          border: Border.all(color: AppColors.border),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -153,7 +144,6 @@ void dispose() {
 
                     const SizedBox(height: 20),
 
-                    // NOTES
                     const Text(
                       "Notes (optional)",
                       style: TextStyle(fontWeight: FontWeight.bold),
@@ -170,11 +160,10 @@ void dispose() {
 
                     const SizedBox(height: 25),
 
-                    // SAVE BUTTON
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: state is ExpenseLoading ? null : saveExpense,
+                        onPressed: state is AddExpenseLoading ? null : saveExpense,
                         child: const Text(
                           "Save Expense",
                           style: TextStyle(fontSize: 16),
@@ -185,9 +174,9 @@ void dispose() {
                 ),
               ),
 
-              if (state is ExpenseLoading)
+              if (state is AddExpenseLoading)
                 Container(
-                  color: Colors.black26,
+                  color: AppColors.overlay,
                   child: const Center(child: CircularProgressIndicator()),
                 ),
             ],
@@ -212,9 +201,9 @@ void dispose() {
 
   void saveExpense() {
     if (titleController.text.isEmpty || amountController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
       return;
     }
 

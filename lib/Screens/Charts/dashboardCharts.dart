@@ -1,3 +1,4 @@
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/enum.dart';
 import 'package:expense_tracker_app/Model/chartModel.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -132,7 +133,7 @@ class _DashboardChartsState extends State<DashboardCharts> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade400),
+        border: Border.all(color: AppColors.borderGrey),
         borderRadius: BorderRadius.circular(10),
       ),
       child: child,
@@ -145,6 +146,7 @@ class _DashboardChartsState extends State<DashboardCharts> {
   Widget _buildPieChart(List<ExpenseCategoryData> data) {
     return Card(
       elevation: 4,
+      color: AppColors.cardBackground,
       child: SizedBox(
         height: 300,
         child: SfCircularChart(
@@ -169,6 +171,7 @@ class _DashboardChartsState extends State<DashboardCharts> {
   Widget _buildBarChart(List<ExpenseCategoryData> data) {
     return Card(
       elevation: 4,
+      color: AppColors.cardBackground,
       child: SizedBox(
         height: 300,
         child: SfCartesianChart(
@@ -193,6 +196,7 @@ class _DashboardChartsState extends State<DashboardCharts> {
   Widget _buildAreaChart(List<ExpenseCategoryData> data) {
     return Card(
       elevation: 4,
+      color: AppColors.cardBackground,
       child: SizedBox(
         height: 300,
         child: SfCartesianChart(
@@ -204,11 +208,10 @@ class _DashboardChartsState extends State<DashboardCharts> {
               xValueMapper: (d, _) => d.category,
               yValueMapper: (d, _) => d.amount,
               dataLabelSettings: const DataLabelSettings(isVisible: true),
-              // AREA FILL COLOR WITH OPACITY
-              color: Colors.blue.withOpacity(0.4),
 
-              // BORDER LINE
-              borderColor: Colors.blue,
+              // ✅ From AppColors
+              color: AppColors.chartFill,
+              borderColor: AppColors.chartBorder,
               borderWidth: 3,
             ),
           ],

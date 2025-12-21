@@ -6,12 +6,61 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+/// 🔔 Local Notifications Plugin (GLOBAL)
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+/// 🔔 Android Notification Channel (GLOBAL)
+const AndroidNotificationChannel highImportanceChannel =
+    AndroidNotificationChannel(
+  'high_importance_channel',
+  'High Importance Notifications',
+  description: 'Used for important notifications',
+  importance: Importance.max,
+);
+
+/// 🔥 Background Notification Handler
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  /// 🔥 Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  /// 🔥 Register Background Handler
+  FirebaseMessaging.onBackgroundMessage(
+    firebaseMessagingBackgroundHandler,
+  );
+
+  /// 🔔 Initialize Local Notifications
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initializationSettings =
+      InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: DarwinInitializationSettings(),
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+  );
+
+  /// 🔔 Create Android Notification Channel (REQUIRED)
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(highImportanceChannel);
 
   runApp(const MyApp());
 }
@@ -32,16 +81,20 @@ class _MyAppState extends State<MyApp> {
     setupPushNotifications();
   }
 
+  /// 🔔 PUSH NOTIFICATION SETUP
   void setupPushNotifications() async {
+    /// iOS + Android 13 permission
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
+    /// Get FCM Token
     final token = await FirebaseMessaging.instance.getToken();
-    debugPrint("FCM Token: $token");
+    debugPrint("🔥 FCM Token: $token");
 
+    /// Save Token to Firestore
     if (token != null) {
       final uid = authService.currentUserId;
       if (uid != null) {
@@ -55,9 +108,24 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
+    /// 🔔 FOREGROUND NOTIFICATIONS (Android + iOS)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint(
-        'Foreground message: ${message.notification?.title}',
+      final notification = message.notification;
+      if (notification == null) return;
+
+      flutterLocalNotificationsPlugin.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'high_importance_channel',
+            'High Importance Notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
       );
     });
   }
@@ -72,16 +140,13 @@ class _MyAppState extends State<MyApp> {
 
       /// 🌟 Global Theme
       theme: ThemeData(
-        // fontFamily: 'NunitoSans',
         scaffoldBackgroundColor: Colors.white,
-
         appBarTheme: const AppBarTheme(
           elevation: 0,
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           centerTitle: true,
         ),
-
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
           background: Colors.white,

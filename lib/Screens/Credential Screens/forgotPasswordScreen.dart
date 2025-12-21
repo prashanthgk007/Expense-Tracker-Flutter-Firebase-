@@ -1,6 +1,7 @@
 import 'package:expense_tracker_app/Bloc/Authentication/auth_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Authentication/auth_event.dart';
 import 'package:expense_tracker_app/Bloc/Authentication/auth_state.dart';
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,8 +29,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
         elevation: 0,
         title: const Text(
           "Reset Password",
@@ -72,7 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   const SizedBox(height: 10),
                   Text(
                     "Enter your email and we'll send you a password reset link.",
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                    style: TextStyle(color: AppColors.darkGrey, fontSize: 16),
                   ),
                   const SizedBox(height: 30),
 
@@ -80,13 +81,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: AppColors.lightGrey,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: TextFormField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: Colors.black),
+                      style: const TextStyle(color: AppColors.black),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return "Email is required";
@@ -101,14 +102,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         labelText: "Email",
-                        labelStyle: TextStyle(color: Colors.grey.shade600),
-                        prefixIcon: Icon(
-                          Icons.email,
-                          color: Colors.grey.shade400,
-                        ),
+                        labelStyle: TextStyle(color: AppColors.darkGrey),
+                        prefixIcon: Icon(Icons.email, color: AppColors.grey),
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 30),
 
                   // Send Reset Link Button
@@ -129,25 +128,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.all(0),
+                        padding: EdgeInsets.zero,
                         backgroundColor: Colors.transparent,
                         elevation: 0,
                       ),
                       child: Ink(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.blue.shade600,
-                              Colors.blue.shade400,
-                            ],
-                          ),
+                          gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(
+                        child: const Center(
                           child: Text(
                             "Send Reset Link",
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppColors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),

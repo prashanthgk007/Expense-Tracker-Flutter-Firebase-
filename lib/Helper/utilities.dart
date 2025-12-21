@@ -112,4 +112,12 @@ class AppUtils {
   static bool isValidAmount(String value) {
     return double.tryParse(value) != null;
   }
+
+ static double toDouble(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is int) return value.toDouble();
+  if (value is double) return value;
+  return 0.0;
+}
+
 }

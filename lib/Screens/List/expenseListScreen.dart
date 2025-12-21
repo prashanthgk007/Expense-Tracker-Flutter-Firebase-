@@ -5,6 +5,7 @@ import 'package:expense_tracker_app/Bloc/Expense/Delete%20Expense/delete_expense
 import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_event.dart';
 import 'package:expense_tracker_app/Bloc/Expense/List%20Expense/expense_state.dart';
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/emptyStateWidget.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
@@ -30,7 +31,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: CommonFAB(
-          heroTag: 'dashboard_fab',
+        heroTag: 'dashboard_fab',
         onPressed: () => Navigator.pushNamed(context, AppRoutes.addExpense),
       ),
 
@@ -92,16 +93,17 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: const [
                     BoxShadow(
                       blurRadius: 12,
-                      color: Colors.black12,
+                      color: AppColors.shadow,
                       offset: Offset(0, 6),
                     ),
                   ],
                 ),
+
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -129,13 +131,13 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.12),
+                              color: AppColors.success.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Text(
                               "₹${expense.amount.toStringAsFixed(0)}",
                               style: const TextStyle(
-                                color: Colors.green,
+                                color: AppColors.success,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -168,9 +170,9 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                           expense.notes,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade600,
+                            color: AppColors.grey600,
                           ),
                         ),
                       ],
@@ -179,12 +181,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
                       /// ACTIONS
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           IconButton(
-                            splashRadius: 22,
                             icon: const Icon(Icons.edit_outlined),
-                            color: Colors.blueGrey,
+                            color: AppColors.grey700,
                             onPressed: () async {
                               await Navigator.pushNamed(
                                 context,
@@ -196,7 +197,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                           IconButton(
                             splashRadius: 22,
                             icon: const Icon(Icons.delete_outline),
-                            color: Colors.redAccent,
+                            color: AppColors.error,
                             onPressed: () {
                               showDialog(
                                 context: context,
@@ -215,7 +216,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                                     ),
                                     ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
+                                        backgroundColor: AppColors.error,
                                       ),
                                       onPressed: () {
                                         context.read<DeleteExpenseBloc>().add(
@@ -249,16 +250,16 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: AppColors.grey100,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: Colors.grey.shade700),
+          Icon(icon, size: 14, color: AppColors.grey700),
           const SizedBox(width: 6),
           Text(
             text,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+            style: const TextStyle(fontSize: 12, color: AppColors.grey800),
           ),
         ],
       ),

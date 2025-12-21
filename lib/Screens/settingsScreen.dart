@@ -4,6 +4,7 @@ import 'package:expense_tracker_app/Bloc/Authentication/auth_state.dart';
 import 'package:expense_tracker_app/Bloc/Users/user_bloc.dart';
 import 'package:expense_tracker_app/Bloc/Users/user_event.dart';
 import 'package:expense_tracker_app/Bloc/Users/user_state.dart';
+import 'package:expense_tracker_app/Constants/appColors.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Model/userModel.dart';
 import 'package:expense_tracker_app/Helper/utilities.dart';
@@ -40,14 +41,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
-        title: const Text("Settings", style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: const Text(
+          "Settings",
+          style: TextStyle(color: AppColors.black),
+        ),
+        backgroundColor: AppColors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: AppColors.black),
       ),
-
       body: BlocConsumer<UserBloc, UserState>(
         listener: (context, state) {
           if (state is UserUpdating) {
@@ -65,7 +68,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             AppUtils.showError(state.error);
           }
         },
-
         builder: (context, state) {
           if (state is UserLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -89,13 +91,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: AppColors.grey100,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: AppColors.shadow,
                         blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        offset: Offset(0, 4),
                       ),
                     ],
                   ),
@@ -103,11 +105,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: Colors.blue.shade600,
+                        backgroundColor: AppColors.primary,
                         child: Text(
                           displayName[0].toUpperCase(),
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
@@ -123,17 +125,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
+                                color: AppColors.black,
                               ),
                             ),
                             Text(
                               displayEmail,
-                              style: TextStyle(color: Colors.grey.shade700),
+                              style: const TextStyle(
+                                color: AppColors.grey600,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               "••••••••",
                               style: TextStyle(
-                                color: Colors.grey.shade500,
+                                color: AppColors.grey600,
                                 letterSpacing: 2,
                               ),
                             ),
@@ -141,7 +146,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.edit, color: Colors.grey.shade700),
+                        icon: const Icon(
+                          Icons.edit,
+                          color: AppColors.grey600,
+                        ),
                         onPressed: () => _showEditDialog(context, user),
                       ),
                     ],
@@ -180,20 +188,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           borderRadius: BorderRadius.circular(12),
                           gradient: LinearGradient(
                             colors: [
-                              Colors.red.shade600,
-                              Colors.red.shade400,
+                              AppColors.error,
+                              AppColors.error.withOpacity(0.8),
                             ],
                           ),
                         ),
                         child: Center(
                           child: state is AuthLoading
                               ? const CircularProgressIndicator(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                 )
                               : const Text(
                                   "Logout",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -221,13 +229,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           title: const Text("Edit Profile"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Name")),
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: "Name"),
+              ),
               const SizedBox(height: 10),
-              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: "Email")),
+              TextField(
+                controller: emailCtrl,
+                decoration: const InputDecoration(labelText: "Email"),
+              ),
               const SizedBox(height: 10),
               TextField(
                 key: ValueKey(isPasswordVisible),
@@ -240,6 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       isPasswordVisible
                           ? Icons.visibility
                           : Icons.visibility_off,
+                      color: AppColors.grey600,
                     ),
                     onPressed: () => setState(() {
                       isPasswordVisible = !isPasswordVisible;
@@ -255,6 +273,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text("Cancel"),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+              ),
               onPressed: () {
                 Navigator.pop(context);
                 this.context.read<UserBloc>().add(
