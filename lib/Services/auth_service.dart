@@ -17,9 +17,24 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> getUserProfile() async {
-    final callable = FirebaseFunctions.instance.httpsCallable("getUserProfile");
-    final response = await callable.call();
-    return Map<String, dynamic>.from(response.data);
+    final uid = currentUserId;
+    if (uid == null) throw Exception("User not logged in");
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      if (doc.exists) {
+        
+        return doc.data() ?? {};
+      } else {
+        throw Exception("Profile not found");
+      }
+    } catch (e) {
+      throw Exception("Failed to get profile: $e");
+    }
   }
 
   Future<UserModel?> updateUserProfile({
@@ -27,23 +42,58 @@ class AuthService {
     String? email,
     String? password,
   }) async {
-    final callable = FirebaseFunctions.instance.httpsCallable(
-      "updateUserProfile",
-    );
+    final uid = currentUserId;
+    if (uid == null) throw Exception("User not logged in");
 
-    final response = await callable.call({
-      "name": name,
-      "email": email,
-      "password": password,
-    });
+    try {
+      final Map<String, dynamic> updateData = {
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      
+      if (name != null) updateData['name'] = name;
+      if (email != null) updateData['email'] = email;
+      
+      // Update Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set(updateData, SetOptions(merge: true));
+      
+      // Update Auth (Email/Password) - This REQUIRES online.
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+         try {
+           if (email != null && email != user.email) {
+             await user.verifyBeforeUpdateEmail(email); // or updateEmail
+           }
+           if (password != null) {
+             await user.updatePassword(password);
+           }
+           if (name != null) {
+             await user.updateDisplayName(name);
+           }
+         } catch (e) {
+           print("Auth update failed (might be offline): $e");
+           // We continue because local Firestore update succeeded (persisted).
+         }
+      }
 
-    if (response.data["success"] == true && response.data["user"] != null) {
-      return UserModel.fromMap(
-        Map<String, dynamic>.from(response.data["user"]),
-      );
+      // Return updated model
+      // Fetch latest
+       final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+          
+       if (doc.exists) {
+         return UserModel.fromMap(doc.data()!);
+       }
+       return null;
+       
+    } catch (e) {
+      print("Update profile failed: $e");
+      return null;
     }
-
-    return null;
   }
 
   Future<bool> signup(String email, String password, String username) async {

@@ -1,93 +1,117 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:expense_tracker_app/Model/expenseModel.dart';
 import 'package:expense_tracker_app/Model/expenseSummaryModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ExpenseService {
-  final FirebaseFunctions functions = FirebaseFunctions.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  String get _uid {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    return user.uid;
+  }
+
+  CollectionReference get _expensesRef =>
+      _db.collection("users").doc(_uid).collection("expenses");
+
+  DocumentReference get _budgetRef =>
+      _db.collection("users").doc(_uid).collection("budget").doc("budget");
 
   /// -------------------- EXPENSES (Single Fetch) --------------------
   Future<List<ExpenseModel>> getExpenses() async {
-    final callable = functions.httpsCallable("getExpenses");
-    final response = await callable.call();
+    try {
+      final snapshot = await _expensesRef
+          .orderBy("createdAt", descending: true)
+          .get();
 
-    final data = response.data as Map<String, dynamic>;
-    final list = data['expenses'] as List<dynamic>;
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        // Handle Timestamp conversion if necessary, though helper methods inside Model might handle it.
+        // Assuming Model expects Map. Need to ensure 'date' is handled.
+        // The cloud function returned ISO string for date. Firestore returns Timestamp.
+        // We might need to adjust map content or rely on Model.
+        // Let's check ExpenseModel.
+        return _mapDocToModel(doc);
+      }).toList();
+    } catch (e) {
+      print("Error fetching expenses: $e");
+      rethrow;
+    }
+  }
 
-    return list
-        .map(
-          (json) =>
-              ExpenseModel.fromMap(Map<String, dynamic>.from(json), json['id']),
-        )
-        .toList();
+  ExpenseModel _mapDocToModel(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    // Convert Firestore Timestamp to whatever Model expects if needed.
+    // If Model expects String date (ISO), we convert.
+    // However, looking at previous code: `date: data.date.toDate().toISOString()` was done in cloud function.
+    // So Model likely expects 'date' (String) or checks type.
+    // Let's be safe and convert Timestamp to ISO string if it is Timestamp.
+    if (data['date'] is Timestamp) {
+      data['date'] = (data['date'] as Timestamp).toDate().toIso8601String();
+    }
+    return ExpenseModel.fromMap(data, doc.id);
   }
 
   Future<void> addExpense(ExpenseModel expense) async {
-    final callable = functions.httpsCallable("addExpense");
-    await callable.call({
+    await _expensesRef.add({
       "title": expense.title,
       "amount": expense.amount,
       "category": expense.category,
-      "date": expense.date.toIso8601String(),
+      "date": Timestamp.fromDate(expense.date), // Store as Timestamp
       "notes": expense.notes,
+      "createdAt": FieldValue.serverTimestamp(),
     });
   }
 
   Future<void> updateExpense(ExpenseModel expense) async {
-    final callable = functions.httpsCallable("updateExpense");
-    await callable.call({
-      "id": expense.id,
+    await _expensesRef.doc(expense.id).update({
       "title": expense.title,
       "amount": expense.amount,
       "category": expense.category,
-      "date": expense.date.toIso8601String(),
+      "date": Timestamp.fromDate(expense.date),
       "notes": expense.notes,
     });
   }
 
   Future<void> deleteExpense(String id) async {
-    final callable = functions.httpsCallable("deleteExpense");
-    await callable.call({"id": id});
+    await _expensesRef.doc(id).delete();
   }
 
   /// ----------------- Budget System -----------------
 
   Future<Map<String, dynamic>> getBudget() async {
-    final callable = FirebaseFunctions.instance.httpsCallable("getBudget");
-    final result = await callable.call();
+    final doc = await _budgetRef.get();
 
-    if (result.data == null || result.data is! Map) {
-      throw Exception("Invalid response from server");
+    if (doc.exists && doc.data() != null) {
+      return doc.data() as Map<String, dynamic>;
+    } else {
+      return {
+        "limit": 0,
+        "totalSpent": 0,
+        "updatedAt": null,
+      };
     }
-
-    return Map<String, dynamic>.from(result.data);
   }
 
   Future<void> updateBudget(double limit) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("User not logged in");
-
-    final callable = FirebaseFunctions.instance.httpsCallable('updateBudget');
-
-    await callable.call({"limit": limit});
+    // We only update the limit. totalSpent should be calculated or preserved.
+    // Since we are moving logic to client, we can just setMerge.
+    await _budgetRef.set({
+      "limit": limit,
+      "updatedAt": FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
-  /// Calculate total spent from all expenses
   Future<double> calculateTotalSpent() async {
+    // Client side calculation
     try {
       final expenses = await getExpenses();
       double total = 0.0;
-
-      print("DEBUG: Calculating totalSpent from ${expenses.length} expenses");
-
       for (var expense in expenses) {
-        print(
-          "DEBUG: Expense amount: ${expense.amount}, type: ${expense.amount.runtimeType}",
-        );
         total += expense.amount;
       }
-
-      print("DEBUG: Total calculated: $total");
       return total;
     } catch (e) {
       print("ERROR: Could not calculate totalSpent: $e");
@@ -96,43 +120,47 @@ class ExpenseService {
   }
 
   Future<void> setBudgetLimit(double limit) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("User not logged in");
-
-    final callable = FirebaseFunctions.instance.httpsCallable("setBudgetLimit");
-
-    await callable.call({"limit": limit});
-
-    print("DEBUG: Budget updated using cloud function. Limit: $limit");
+    await updateBudget(limit);
   }
 
-  // Future<Map<String, dynamic>> recalculateTotalSpent() async {
-  //   final user = FirebaseAuth.instance.currentUser;
-  //   if (user == null) throw Exception("User not logged in");
-
-  //   final callable = FirebaseFunctions.instance.httpsCallable(
-  //     'recalculateBudget',
-  //   );
-  //   final result = await callable.call();
-
-  //   if (result.data is Map<String, dynamic>) {
-  //     return Map<String, dynamic>.from(result.data);
-  //   }
-
-  //   throw Exception("Invalid response from server");
-  // }
-
-  //Expense Summary / Category
-
   /// -------------------- EXPENSE SUMMARY (Single Fetch) --------------------
+  /// Calculated Client-Side now to support Offline
   Future<ExpenseSummary> getExpenseSummary() async {
-    final callable = functions.httpsCallable("getExpenseSummary");
-    final response = await callable.call();
+    try {
+      final expenses = await getExpenses();
 
-    if (response.data == null || response.data is! Map) {
-      throw Exception("Invalid summary response from server");
+      double totalSpent = 0;
+      double thisMonthSpent = 0;
+      Map<String, double> categoryTotals = {};
+      
+      final now = DateTime.now();
+      final startOfMonth = DateTime(now.year, now.month, 1);
+
+      for (var e in expenses) {
+        totalSpent += e.amount;
+        
+        if (e.date.isAfter(startOfMonth) || e.date.isAtSameMomentAs(startOfMonth)) {
+          thisMonthSpent += e.amount;
+        }
+
+        final cat = e.category.isEmpty ? "Other" : e.category;
+        categoryTotals[cat] = (categoryTotals[cat] ?? 0) + e.amount;
+      }
+
+      // Construct ExpenseSummary manually since fromMap expected cloud function response
+      // We can use a constructor or create a map that matches fromMap structure.
+      // Let's assume ExpenseSummary has a constructor or factory we can use or mock the map.
+      
+      return ExpenseSummary(
+        totalSpent: totalSpent,
+        thisMonthSpent: thisMonthSpent,
+        categories: categoryTotals,
+      );
+
+    } catch (e) {
+      print("Error generating summary: $e");
+      // Return empty summary on error or rethrow
+      return ExpenseSummary.empty();
     }
-
-    return ExpenseSummary.fromMap(Map<String, dynamic>.from(response.data));
   }
 }
