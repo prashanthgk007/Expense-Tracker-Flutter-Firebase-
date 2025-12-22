@@ -56,16 +56,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         listener: (context, state) {
           if (state is UserUpdating) {
             AppUtils.showLoading("Updating...");
-          } else {
-            AppUtils.dismiss();
-          }
-
-          if (state is UserUpdateSuccess) {
+          } else if (state is UserUpdateSuccess) {
             AppUtils.showSuccess("Profile Updated");
             context.read<UserBloc>().add(GetUserProfileEvent());
-          }
-
-          if (state is UserFailure) {
+          } else if (state is UserFailure) {
             AppUtils.showError(state.error);
           }
         },

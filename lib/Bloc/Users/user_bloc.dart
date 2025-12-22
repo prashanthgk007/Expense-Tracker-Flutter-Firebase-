@@ -1,3 +1,4 @@
+import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:expense_tracker_app/Model/userModel.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'user_event.dart';
@@ -16,7 +17,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         final user = UserModel.fromMap(userData); // Convert to model
         emit(UserLoaded(user));
       } catch (e) {
-        emit(UserFailure(e.toString()));
+        emit(UserFailure(AppUtils.extractErrorMessage(e)));
       }
     });
 
@@ -37,7 +38,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           emit(UserFailure("Failed to update user."));
         }
       } catch (e) {
-        emit(UserFailure(e.toString()));
+        emit(UserFailure(AppUtils.extractErrorMessage(e)));
       }
     });
   }

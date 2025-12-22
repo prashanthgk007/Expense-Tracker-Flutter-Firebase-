@@ -44,17 +44,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       body: BlocConsumer<AddExpenseBloc, AddExpenseState>(
         listener: (context, state) {
           if (state is AddExpenseLoading) {
-            AppUtils.showLoading("Adding");
-          } else {
-            AppUtils.dismiss();
-          }
-
-          if (state is AddExpenseSuccess) {
+            AppUtils.showLoading("Adding...");
+          } else if (state is AddExpenseSuccess) {
             AppUtils.showSuccess("Expense added");
             Navigator.pop(context, true);
-          }
-
-          if (state is AddExpenseFailure) {
+          } else if (state is AddExpenseFailure) {
             AppUtils.showError(state.message);
           }
         },

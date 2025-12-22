@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:expense_tracker_app/Bloc/Authentication/auth_event.dart';
 import 'package:expense_tracker_app/Bloc/Authentication/auth_state.dart';
+import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:expense_tracker_app/Services/auth_service.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -14,7 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await service.login(event.email, event.password);
         emit(AuthSuccess());
       } catch (e) {
-        emit(AuthFailure(e.toString()));
+        emit(AuthFailure(AppUtils.extractErrorMessage(e)));
       }
     });
 
@@ -24,7 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await service.signup(event.email, event.password, event.userName);
         emit(AuthSuccess());
       } catch (e) {
-        emit(AuthFailure(e.toString()));
+        emit(AuthFailure(AppUtils.extractErrorMessage(e)));
       }
     });
 
@@ -35,7 +36,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await service.logout();
         emit(AuthSuccess());
       } catch (e) {
-        emit(AuthFailure(e.toString()));
+        emit(AuthFailure(AppUtils.extractErrorMessage(e)));
       }
     });
 
@@ -46,7 +47,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await service.resetPassword(event.email);
         emit(ResetPasswordSuccess());
       } catch (e) {
-        emit(ResetPasswordFailure(e.toString()));
+        emit(ResetPasswordFailure(AppUtils.extractErrorMessage(e)));
       }
     });
   }

@@ -58,9 +58,8 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       body: BlocConsumer<EditExpenseBloc, EditExpenseState>(
         listener: (context, state) {
           if (state is EditExpenseLoading) {
-            AppUtils.showLoading("Updating");
-          }
-          if (state is EditExpenseSuccess) {
+            AppUtils.showLoading("Updating...");
+          } else if (state is EditExpenseSuccess) {
             AppUtils.showSuccess("Expense updated");
             Navigator.pop(context, true);
           } else if (state is EditExpenseFailure) {

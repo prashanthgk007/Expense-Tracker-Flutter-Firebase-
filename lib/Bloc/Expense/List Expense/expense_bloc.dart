@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../Services/stream_service.dart';
 import 'expense_event.dart';
@@ -23,7 +24,7 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         add(ExpensesUpdatedEvent(expenses));
       },
       onError: (e) {
-        add(ExpensesErrorEvent(e.toString()));
+        add(ExpensesErrorEvent(AppUtils.extractErrorMessage(e)));
       },
     );
   }

@@ -113,11 +113,33 @@ class AppUtils {
     return double.tryParse(value) != null;
   }
 
- static double toDouble(dynamic value) {
-  if (value == null) return 0.0;
-  if (value is int) return value.toDouble();
-  if (value is double) return value;
-  return 0.0;
-}
+  static double toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is int) return value.toDouble();
+    if (value is double) return value;
+    return 0.0;
+  }
 
+  // ---------------------------------------------------
+  // ✔ ERROR HANDLING
+  // ---------------------------------------------------
+  static String extractErrorMessage(dynamic e) {
+    String message = e.toString();
+
+    // Remove "Exception: " prefix
+    if (message.startsWith("Exception: ")) {
+      message = message.replaceFirst("Exception: ", "");
+    }
+
+    // Handle Firebase errors (often look like [firebase_functions/internal] message)
+    if (message.contains("] ")) {
+      message = message.split("] ").last;
+    }
+
+    // Generic cleanup
+    message = message.trim();
+    if (message.isEmpty) return "An unknown error occurred";
+
+    return message;
+  }
 }

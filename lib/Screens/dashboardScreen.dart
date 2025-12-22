@@ -36,12 +36,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         listeners: [
           BlocListener<BudgetBloc, BudgetState>(
             listener: (context, state) {
-              // if (state is BudgetLoading) AppUtils.showLoading("Updating...");
-              if (state is BudgetLoaded) {
+              if (state is BudgetLoading) {
+                AppUtils.showLoading("Updating Budget...");
+              } else if (state is BudgetLoaded || state is BudgetUpdatedSuccess) {
                 AppUtils.dismiss();
-              }
-              if (state is BudgetError) {
-                AppUtils.dismiss();
+                if (state is BudgetUpdatedSuccess) {
+                  AppUtils.showSuccess("Budget Updated");
+                }
+              } else if (state is BudgetError) {
                 AppUtils.showError(state.message);
               }
             },

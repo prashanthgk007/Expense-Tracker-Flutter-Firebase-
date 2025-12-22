@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../Services/expense_service.dart';
 import '../../../Services/stream_service.dart';
@@ -32,7 +33,7 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
         add(BudgetUpdatedEvent(data));
       },
       onError: (e) {
-        add(BudgetErrorEvent(e.toString()));
+        add(BudgetErrorEvent(AppUtils.extractErrorMessage(e)));
       },
     );
   }
@@ -56,8 +57,9 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
 
     try {
       await _service.setBudgetLimit(event.limit);
+      emit(BudgetUpdatedSuccess());
     } catch (e) {
-      emit(BudgetError(e.toString()));
+      emit(BudgetError(AppUtils.extractErrorMessage(e)));
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:expense_tracker_app/Helper/utilities.dart';
 import '../../../Services/expense_service.dart';
 import '../../../Model/expenseModel.dart';
 
@@ -22,7 +23,7 @@ class EditExpenseBloc extends Bloc<EditExpenseEvent, EditExpenseState> {
 
       emit(EditExpenseSuccess());
     } catch (e) {
-      emit(EditExpenseFailure(e.toString()));
+      emit(EditExpenseFailure(AppUtils.extractErrorMessage(e)));
     }
   }
 }

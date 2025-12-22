@@ -1,3 +1,4 @@
+import 'package:expense_tracker_app/Helper/utilities.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'add_expense_event.dart';
 import 'add_expense_state.dart';
@@ -19,7 +20,7 @@ class AddExpenseBloc extends Bloc<AddExpenseEvent, AddExpenseState> {
 
       emit(AddExpenseSuccess());
     } catch (e) {
-      emit(AddExpenseFailure(e.toString()));
+      emit(AddExpenseFailure(AppUtils.extractErrorMessage(e)));
     }
   }
 }

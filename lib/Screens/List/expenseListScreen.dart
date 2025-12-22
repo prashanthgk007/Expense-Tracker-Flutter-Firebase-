@@ -39,9 +39,6 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         listeners: [
           BlocListener<ExpenseBloc, ExpenseState>(
             listener: (context, state) {
-              if (state is AddExpenseLoading) {
-                AppUtils.showLoading("Loading");
-              }
               if (state is ExpenseError) {
                 AppUtils.showError(state.message);
               }
@@ -49,9 +46,9 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           ),
 
           BlocListener<DeleteExpenseBloc, DeleteExpenseState>(
-            listener: (context, state) async {
+            listener: (context, state) {
               if (state is DeleteExpenseLoading) {
-                AppUtils.showLoading("Updating");
+                AppUtils.showLoading("Deleting...");
               } else if (state is DeleteExpenseSuccess) {
                 AppUtils.showSuccess("Expense deleted");
               } else if (state is DeleteExpenseFailure) {

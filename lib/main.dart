@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:expense_tracker_app/Helper/router.dart';
 import 'package:expense_tracker_app/Services/auth_service.dart';
+import 'package:expense_tracker_app/Services/stream_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'firebase_options.dart';
@@ -53,14 +54,36 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final authService = AuthService();
+  final streamService = ExpenseStreamService();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     setupPushNotifications();
     setupInteractions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    streamService.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.hidden || 
+        state == AppLifecycleState.paused || 
+        state == AppLifecycleState.detached) {
+      streamService.dispose();
+      debugPrint("App Lifecycle: Stream Service Closed");
+    } else if (state == AppLifecycleState.resumed) {
+      streamService.reset();
+      debugPrint("App Lifecycle: Stream Service Reset");
+    }
   }
 
   /// 4. 🔔 Full Notification Setup
